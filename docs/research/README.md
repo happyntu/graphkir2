@@ -10,6 +10,7 @@ Use this directory for:
 * novel-allele handling notes
 * HPRC sanity findings
 * tuning logs for ablation runs
+* overfit checks for synthetic candidates before promoting defaults
 
 Suggested file naming:
 

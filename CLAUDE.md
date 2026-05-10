@@ -218,9 +218,21 @@ Current synthetic functional-target surface:
 
 This surface is represented by
 `benchmarks/configs/synthetic-difficult5-functional-target-kir2ds3-private.json`.
-It is the current lead for the `3-digit/5-digit` objective. The current
-synthetic difficult5 functional target reaches `1.0 / 1.0 / 1.0` without
-regressing `synthetic-functional8` or `synthetic-functional8x6`.
+It is the current lead for the original 4-sample `synthetic-difficult5` panel:
+`1.0 / 1.0 / 1.0` without regressing `synthetic-functional8` or
+`synthetic-functional8x6`.
+
+Do not promote it as the global default yet. The larger
+`synthetic-difficult5x12` overfit check shows that the likelihood/private-support
+surface still regresses `KIR2DS3` versus the discard baseline:
+
+* discard baseline: `0.9667 / 0.9583 / 0.925`
+* balanced likelihood top5000: `0.925 / 0.925 / 0.9083`
+* functional target: `0.9417 / 0.9417 / 0.9167`
+
+Next method work should make `KIR2DS3` private-support / cross-gene
+neutralization conditional on explicit contamination evidence, rather than
+applying it as a broad per-gene rule.
 
 ## Synthetic-First Workflow
 
