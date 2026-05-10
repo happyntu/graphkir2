@@ -356,9 +356,9 @@ def render_markdown(
             "",
             "Remaining failure focus:",
             "",
-            "* `KIR2DL1` on `synthetic-functional8x6`",
-            "* `KIR2DS3` functional typing on `synthetic-difficult5`",
-            "* `KIR2DS4` 7-digit resolution on `synthetic-difficult5`",
+            "* balanced baseline: `KIR2DL1` on `synthetic-functional8x6`",
+            "* balanced baseline: `KIR2DS3` functional typing on `synthetic-difficult5`",
+            "* functional target: `KIR2DS4/KIR2DS5` 7-digit resolution on `synthetic-difficult5`",
         ]
     )
     return "\n".join(lines) + "\n"
