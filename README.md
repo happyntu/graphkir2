@@ -190,10 +190,24 @@ Evaluation code and data for v2:
 The repository is now organized with clearer top-level boundaries:
 
 * `graphkir/` and `kir/`: installable Python packages and CLI entrypoints
+* `src/graphkir2/`: next-generation refactor area for the new implementation
 * `examples/`: small example FASTQ inputs and expected outputs
 * `data/`: static cohort/reference/ground-truth inputs used by research scripts
 * `research/`: paper and benchmark scripts, experimental pipelines, cluster templates
+* `benchmarks/`: side-by-side benchmarking inputs, configs, and result summaries for old vs new implementations
 * `docs/`: MkDocs site content and manuscript artifacts
+
+## Refactor strategy
+
+The current `graphkir/` and `kir/` packages are kept as the baseline implementation for
+correctness and performance comparisons.
+
+New development should go into `src/graphkir2/`:
+
+* `graphkir`: stable baseline / legacy implementation
+* `graphkir2`: refactored implementation under active development
+
+This allows benchmarking old vs new behavior without losing a known-working reference.
 
 
 ## Related tools

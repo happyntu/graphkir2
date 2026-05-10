@@ -52,15 +52,21 @@ paper = [
 
 [project.scripts]
 graphkir = "graphkir.main:entrypoint"
+graphkir2 = "graphkir.main2:entrypoint"
 kirpipe = "kir.main:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["graphkir", "kir"]
+where = [".", "src"]
+include = ["graphkir", "kir", "graphkir2", "graphkir2.*"]
 
 [tool.setuptools.package-data]
 graphkir = ["py.typed"]
 
+
+[tool.pytest.ini_options]
+addopts = [
+    "--ignore=research",
+]
 
 [tool.mypy]
 plugins = "numpy.typing.mypy_plugin"

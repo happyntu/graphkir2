@@ -1,0 +1,23 @@
+{
+  "benchmark_label": "synthetic-functional8x6-likelihood-exon2-minfrac07",
+  "input_csv": "benchmarks/generated/synthetic-functional8x6/manifest.csv",
+  "output_cohort_name": "benchmarks/results/synthetic-functional8x6/cohort",
+  "thread": 2,
+  "memory_gb": 7,
+  "engine": "local",
+  "ref_genome": "hg19",
+  "index_folder": "benchmarks/generated/synthetic-functional8x6/index_ab",
+  "ipd_version": "2100",
+  "msa_type": "ab",
+  "use_exon_only_alleles": false,
+  "multi_map_policy": "likelihood",
+  "allele_strategy": "full",
+  "allele_exon_weight": 2.0,
+  "allele_ambiguity_neutral_prob": 0.999,
+  "allele_select_min_fraction_ratio": 0.7,
+  "allele_truth_tsv": "benchmarks/generated/synthetic-functional8x6/synthetic-functional8x6_truth.tsv",
+  "cn_diploid_gene": "",
+  "cn_cohort": false,
+  "assume_3dl3_diploid": true,
+  "step_skip_extraction": true
+}

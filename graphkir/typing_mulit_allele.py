@@ -24,6 +24,15 @@ IdArray = npt.NDArray[np.int_]
 BoolArray = npt.NDArray[np.bool_]
 
 
+def _pair_read_name(read: PairRead) -> str:
+    """Extract the physical read-pair name from a PairRead."""
+    if read.l_sam:
+        return read.l_sam.split("\t", 1)[0]
+    if read.r_sam:
+        return read.r_sam.split("\t", 1)[0]
+    return ""
+
+
 @dataclass
 class TypingResult:
     """
@@ -61,7 +70,10 @@ class TypingResult:
         return not len(self.value)
 
     def selectBest(
-        self, filter_fraction: bool = True, filter_minor: bool = False
+        self,
+        filter_fraction: bool = True,
+        filter_minor: bool = False,
+        min_fraction_ratio: float = 0.5,
     ) -> list[str]:
         """
         Select the best allele set by the maximum of likelihood
@@ -82,7 +94,7 @@ class TypingResult:
         if filter_fraction:
             expect_prob = 1 / self.n
             ids = filter(
-                lambda i: all(i >= expect_prob / 2 for i in self.fraction[i]),
+                lambda i: all(i >= expect_prob * min_fraction_ratio for i in self.fraction[i]),
                 ids
             )
         if filter_minor:
@@ -234,6 +246,10 @@ class AlleleTyping:
         top_n: int = 300,
         no_empty: bool = True,
         variant_correction: bool = True,
+        exon_weight: float = 1.0,
+        ambiguity_likelihood: bool = False,
+        ambiguity_neutral_prob: float = 0.999,
+        ambiguity_target_weight_power: float = 1.0,
     ):
         """
         Parameters:
@@ -246,6 +262,10 @@ class AlleleTyping:
         self.top_n = top_n
         self._no_empty = no_empty
         self.force_homo: bool | None = force_homo
+        self.exon_weight = exon_weight
+        self.ambiguity_likelihood = ambiguity_likelihood
+        self.ambiguity_neutral_prob = ambiguity_neutral_prob
+        self.ambiguity_target_weight_power = ambiguity_target_weight_power
         allele_names = self.collectAlleleNames(variants)
 
         # create variant_id -> variant
@@ -259,8 +279,9 @@ class AlleleTyping:
         if self._no_empty:  # reserve read position
             reads = self.removeEmptyReads(reads)
         self.reads = reads
-        self.probs = self.reads2AlleleProb(reads)
+        self.probs, self.read_weights = self.reads2AlleleProbAndWeights(reads)
         self.log_probs = np.log10(self.probs)
+        self.weighted_log_probs = self.log_probs * self.read_weights[:, None] if self.log_probs.size else self.log_probs
 
         self.result: list[TypingResult] = []
         # , allele_length: dict[str, float]):
@@ -291,12 +312,13 @@ class AlleleTyping:
             onehot[self.allele_to_id[allele]] = True
         return onehot
 
-    @staticmethod
-    def onehot2Prob(onehot: BoolArray) -> FloatNdArray:
+    def onehot2Prob(self, onehot: BoolArray, variant: Variant | None = None) -> FloatNdArray:
         """Onehot encoding -> probility"""
         # TODO: use quality
         prob = np.ones(onehot.shape) * 0.001
         prob[onehot] = 0.999
+        if variant is not None and variant.in_exon and self.exon_weight != 1.0:
+            prob = np.power(prob, 1.0 / self.exon_weight)
         return prob
 
     def errorCorrection(self, reads: list[PairRead]) -> list[PairRead]:
@@ -337,48 +359,111 @@ class AlleleTyping:
             read.rnv = [vid for vid in read.rnv if not vid in exclude_v_neg]
         return reads
 
-    def reads2AlleleProb(self, reads: list[PairRead]) -> FloatNdArray:
-        """Position/Negative variants in read -> probility of read belonged to allele"""
+    def read2AlleleProb(self, read: PairRead) -> FloatNdArray | None:
+        """Position/Negative variants in one read -> allele probability vector."""
+        prob_mod: list[FloatNdArray] = []
+        prob = [
+            *[
+                self.onehot2Prob(self.read2Onehot(self.variants[i]), self.variants[i])
+                for i in read.lpv
+            ],
+            *[
+                self.onehot2Prob(self.read2Onehot(self.variants[i]), self.variants[i])
+                for i in read.rpv
+            ],
+            *[
+                self.onehot2Prob(
+                    np.logical_not(self.read2Onehot(self.variants[i])),
+                    self.variants[i],
+                )
+                for i in read.lnv
+            ],
+            *[
+                self.onehot2Prob(
+                    np.logical_not(self.read2Onehot(self.variants[i])),
+                    self.variants[i],
+                )
+                for i in read.rnv
+            ],
+        ]
+        for p in prob_mod:
+            prob.append(p)
+
+        if not prob:
+            if not self._no_empty:
+                prob = [np.ones(len(self.allele_to_id)) * 0.999]
+            else:
+                return None
+        return np.stack(prob).prod(axis=0)
+
+    def reads2AlleleProbAndWeights(
+        self,
+        reads: list[PairRead],
+    ) -> tuple[FloatNdArray, FloatNdArray]:
+        """Convert reads to allele probabilities and likelihood row weights."""
+        if self.ambiguity_likelihood:
+            return self.reads2AmbiguousAlleleProbAndWeights(reads)
+
         probs = []
+        weights = []
         for read in reads:
-            prob_mod: list[FloatNdArray] = []
-            """
-            d_tune = 100 #deletion score tunning, mismatch panelty: 0.001 x d_tune
-            
-            lpv_d = [self.variants[v] for v in read.lpv if self.variants[v].typ == "deletion"]
-            lnv_d = [self.variants[v] for v in read.lnv if self.variants[v].typ == "deletion"]
-            rpv_d = [self.variants[v] for v in read.rpv if self.variants[v].typ == "deletion"]
-            rnv_d = [self.variants[v] for v in read.rnv if self.variants[v].typ == "deletion"]
-
-            for pv in lpv_d:
-                prob_mod.append([d_tune if _ == 0.001 else 1 for _ in self.onehot2Prob(self.read2Onehot(pv))])
-            for pv in rpv_d:
-                prob_mod.append([d_tune if _ == 0.001 else 1 for _ in self.onehot2Prob(self.read2Onehot(pv))])
-            for nv in lnv_d:
-                prob_mod.append([d_tune if _ == 0.001 else 1 for _ in self.onehot2Prob(np.logical_not(self.read2Onehot(nv)))])
-            for nv in rnv_d:
-                prob_mod.append([d_tune if _ == 0.001 else 1 for _ in self.onehot2Prob(np.logical_not(self.read2Onehot(nv)))])
-            """
-
-            prob = [
-                *[self.onehot2Prob(               self.read2Onehot(self.variants[i]) ) for i in read.lpv],
-                *[self.onehot2Prob(               self.read2Onehot(self.variants[i]) ) for i in read.rpv],
-                *[self.onehot2Prob(np.logical_not(self.read2Onehot(self.variants[i]))) for i in read.lnv],
-                *[self.onehot2Prob(np.logical_not(self.read2Onehot(self.variants[i]))) for i in read.rnv],
-            ]
-            for p in prob_mod:
-                prob.append(p)
-
-            if not prob:
-                if not self._no_empty:
-                    prob = [np.ones(len(self.allele_to_id)) * 0.999]
-            probs.append(np.stack(prob).prod(axis=0))
+            prob = self.read2AlleleProb(read)
+            if prob is None:
+                continue
+            probs.append(prob)
+            weights.append(read.weight)
         # probs = [i for i in probs if i is not None]
         if probs:
-            return np.stack(probs)
+            return np.stack(probs), np.array(weights, dtype=float)
         else:
             logger.warning("[Allele] Error: Empty reads for typing (or Maybe read depth is too low)")
-            return np.array([])
+            return np.array([]), np.array([], dtype=float)
+
+    def reads2AmbiguousAlleleProbAndWeights(
+        self,
+        reads: list[PairRead],
+    ) -> tuple[FloatNdArray, FloatNdArray]:
+        """
+        Collapse alignments from the same physical read into a mixture likelihood.
+
+        For a target gene, the alignment weights represent the probability that
+        the physical read belongs to this gene. Any remaining mass is treated as
+        neutral with respect to alleles of the current gene.
+        """
+        grouped_reads: dict[str, list[PairRead]] = defaultdict(list)
+        for read in reads:
+            grouped_reads[_pair_read_name(read)].append(read)
+
+        probs = []
+        for group in grouped_reads.values():
+            group_probs: list[FloatNdArray] = []
+            group_weights: list[float] = []
+            for read in group:
+                prob = self.read2AlleleProb(read)
+                if prob is None:
+                    continue
+                group_probs.append(prob)
+                group_weights.append(read.weight ** self.ambiguity_target_weight_power)
+            if not group_probs:
+                continue
+
+            total_target_weight = min(sum(group_weights), 1.0)
+            mixture = np.zeros(len(self.allele_to_id), dtype=float)
+            for prob, weight in zip(group_probs, group_weights):
+                mixture += prob * weight
+            neutral_weight = max(0.0, 1.0 - total_target_weight)
+            if neutral_weight:
+                mixture += neutral_weight * self.ambiguity_neutral_prob
+            probs.append(np.maximum(mixture, 1e-300))
+
+        if probs:
+            return np.stack(probs), np.ones(len(probs), dtype=float)
+        logger.warning("[Allele] Error: Empty reads for typing (or Maybe read depth is too low)")
+        return np.array([]), np.array([], dtype=float)
+
+    def reads2AlleleProb(self, reads: list[PairRead]) -> FloatNdArray:
+        """Position/Negative variants in reads -> allele probability matrix."""
+        return self.reads2AlleleProbAndWeights(reads)[0]
 
     def typing(self, cn: int) -> TypingResult:
         """
@@ -492,15 +577,16 @@ class AlleleTyping:
         """
         if not self.probs.shape[0]:
             logger.warning("[Allele] Empty reads for typing. Skip")
+            cn = len(self.result) + 1
             self.result.append(TypingResult(
-                n              = len(self.result) + 1,
+                n              = cn,
                 value          = np.array([]),
-                value_sum_indv = np.array([]),
-                allele_id      = np.array([]),
+                value_sum_indv = np.empty((0, cn)),
+                allele_id      = np.empty((0, cn), dtype=int),
                 allele_name    = [],
-                allele_prob    = np.array([]),
-                fraction       = np.array([]),
-                fraction_uniq  = np.array([]),
+                allele_prob    = np.empty((0, 0)),
+                fraction       = np.empty((0, cn)),
+                fraction_uniq  = np.empty((0, cn)),
             ))
             return self.result[-1]
 
@@ -514,7 +600,7 @@ class AlleleTyping:
                                                                                # size: allele (select partial)
         if not len(self.result):
             # first time: i.e. CN = 1
-            allele_1_prob      = self.log_probs[:, allele_index].sum(axis=0)   # size: allele (selected array)
+            allele_1_prob      = self.weighted_log_probs[:, allele_index].sum(axis=0)   # size: allele (selected array)
             allele_1_id        = allele_index[:, None]                         # size: top_n x 1
             # sort by decending order
             allele_1_top_index = np.argsort(allele_1_prob)[::-1][:self.top_n]  # size: top_n (selected array index)
@@ -542,7 +628,9 @@ class AlleleTyping:
         # (top-n x (allele-1 ... allele-n-1)) x (allele_1 ... allele_m)
         allele_n_prob = np.maximum(self.log_probs[:, allele_index],
                                    allele_n_1_prob.T[:, :, None])             # size: top_n x read x allele
-        allele_n_prob = allele_n_prob.sum(axis=1).flatten()                   # size: (top_n * allele)
+        allele_n_prob = (
+            allele_n_prob * self.read_weights[None, :, None]
+        ).sum(axis=1).flatten()                                               # size: (top_n * allele)
 
         # Mean
         # cn = len(self.result)
@@ -571,7 +659,9 @@ class AlleleTyping:
         allele_n_top_id    = allele_n_id[allele_n_top_index]                   # size: top_n x CN
         allele_n_top_prob  = self.log_probs[:, allele_n_top_id].max(axis=2)    # read x top_n x CN -> size: read x top-n
         allele_n_top_value = allele_n_prob[allele_n_top_index]                 # size: top_n
-        allele_n_top_sum   = self.log_probs[:, allele_n_top_id].sum(axis=0)    # size: top_n
+        allele_n_top_sum   = (
+            self.log_probs[:, allele_n_top_id] * self.read_weights[:, None, None]
+        ).sum(axis=0)                                                          # size: top_n
         # print(candidate_allele, allele_n_top_prob.shape)
 
         # calculate fraction
@@ -580,7 +670,10 @@ class AlleleTyping:
         # 1/q if q alleles has equal max probility
         belong_norm        = (belong / belong.sum(axis=2)[:, :, None])         # size: reads x top_n x CN (float)
         # sum across read and normalize by n
-        allele_n_top_frac  = belong_norm.sum(axis=0) / self.log_probs.shape[0] # size: top_n x CN
+        total_weight       = self.read_weights.sum()
+        allele_n_top_frac  = (
+            belong_norm * self.read_weights[:, None, None]
+        ).sum(axis=0) / total_weight                                           # size: top_n x CN
 
         # belong_uniq        = belong * (belong.sum(axis=2) == 1)[:, :, None]    # size: read x top_n x CN
         # allele_n_top_uniq  = belong_uniq.sum(axis=0) / belong.shape[0]         # size top_n x CN
@@ -636,6 +729,10 @@ class AlleleTypingExonFirst(AlleleTyping):
         candidate_set_threshold: float = 1.,
         variant_correction: bool = True,
         force_homo: bool | None = None,
+        exon_weight: float = 1.0,
+        ambiguity_likelihood: bool = False,
+        ambiguity_neutral_prob: float = 0.999,
+        ambiguity_target_weight_power: float = 1.0,
     ):
         """Extracting exon alleles"""
         # extract exon variants
@@ -664,7 +761,16 @@ class AlleleTypingExonFirst(AlleleTyping):
         # pprint(self.allele_group)
 
         # same as before
-        super().__init__(exon_reads, exon_variants, force_homo=force_homo, top_n=top_n)
+        super().__init__(
+            exon_reads,
+            exon_variants,
+            force_homo=force_homo,
+            top_n=top_n,
+            exon_weight=exon_weight,
+            ambiguity_likelihood=ambiguity_likelihood,
+            ambiguity_neutral_prob=ambiguity_neutral_prob,
+            ambiguity_target_weight_power=ambiguity_target_weight_power,
+        )
         self.candidate_set_threshold = candidate_set_threshold
         """
         self.first_set_only = candidate_set == "first_score"
@@ -683,6 +789,10 @@ class AlleleTypingExonFirst(AlleleTyping):
                 force_homo=force_homo,
                 top_n = top_n // 5, # TODO: default = 30
                 variant_correction=variant_correction,
+                exon_weight=exon_weight,
+                ambiguity_likelihood=ambiguity_likelihood,
+                ambiguity_neutral_prob=ambiguity_neutral_prob,
+                ambiguity_target_weight_power=ambiguity_target_weight_power,
                 # variant_correction=False,  # no_intron_corr
             )
         else:

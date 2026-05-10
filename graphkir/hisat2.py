@@ -44,6 +44,8 @@ class PairRead:
     # some usful info
     multiple: int = 1
     backbone: str = ""
+    weight: float = 1.0
+    ambiguous_weight: float = 0.0
 
     # left/right's positive/negative variants
     lpv: list[str] = field(default_factory=list)

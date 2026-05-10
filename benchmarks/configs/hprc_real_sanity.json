@@ -1,0 +1,20 @@
+{
+  "benchmark_label": "hprc-real-sanity",
+  "input_csv": "examples/cohort.csv",
+  "output_cohort_name": "benchmarks/results/hprc-real-sanity/cohort",
+  "thread": 4,
+  "memory_gb": 14,
+  "engine": "local",
+  "ref_genome": "hg19",
+  "index_folder": "index",
+  "ipd_version": "2100",
+  "msa_type": "ab_2dl1s1",
+  "use_exon_only_alleles": true,
+  "multi_map_policy": "discard",
+  "allele_strategy": "full",
+  "allele_truth_tsv": "data/groundtruth/hprc_summary_v1_2_e.tsv",
+  "cn_diploid_gene": "",
+  "cn_cohort": false,
+  "assume_3dl3_diploid": true,
+  "step_skip_extraction": true
+}

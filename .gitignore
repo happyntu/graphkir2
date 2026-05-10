@@ -43,3 +43,8 @@ hprc_summary_v0_2.tsv
 hprc_summary_v1_0.tsv
 site/
 test_runs/
+
+# Reproducible benchmark artifacts. Keep configs/scripts/docs in git; regenerate
+# these outputs from benchmarks/scripts when needed.
+benchmarks/generated/
+benchmarks/results/
