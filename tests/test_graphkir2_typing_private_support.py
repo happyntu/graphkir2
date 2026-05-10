@@ -14,6 +14,7 @@ from graphkir2.typing.private_support import (
     collect_variant_support,
     neutralize_cross_gene_reads,
     parse_gene_groups,
+    select_with_highest_suffix_tie_break,
     select_with_private_support,
 )
 
@@ -41,6 +42,26 @@ class DummyResult:
     def selectBest(self, min_fraction_ratio: float = 0.5) -> list[str]:
         del min_fraction_ratio
         return self.allele_name[0]
+
+
+class DummyTieResult:
+    n = 2
+    value = [-10.0, -10.0, -10.0, -11.0]
+    allele_name = [
+        ["KIR2DS4*0030103", "KIR2DS4*0010102"],
+        ["KIR2DS4*0030103", "KIR2DS4*0010101"],
+        ["KIR2DS4*0030103", "KIR2DS4*0010109"],
+        ["KIR2DS4*0030101", "KIR2DS4*0010109"],
+    ]
+    fraction = [
+        [0.52, 0.48],
+        [0.52, 0.48],
+        [0.52, 0.48],
+        [0.52, 0.48],
+    ]
+
+    def isFail(self) -> bool:
+        return False
 
 
 def test_private_support_neutralizes_configured_cross_gene_group_only() -> None:
@@ -101,6 +122,16 @@ def test_private_support_can_select_lower_likelihood_supported_candidate() -> No
     assert selected == ["KIR2DS3*0010301", "KIR2DS3*0011201"]
 
 
+def test_highest_suffix_tie_break_keeps_same_five_digit_call() -> None:
+    selected = select_with_highest_suffix_tie_break(
+        DummyTieResult(),
+        ["KIR2DS4*0030103", "KIR2DS4*0010102"],
+        min_fraction_ratio=0.7,
+    )
+
+    assert selected == ["KIR2DS4*0030103", "KIR2DS4*0010109"]
+
+
 def test_typing_plan_carries_private_support_config() -> None:
     mapping = MappingPlan(
         index=IndexBuildPlan("msa", "ref", "graph", "wgs"),
@@ -142,6 +173,7 @@ def test_typing_plan_carries_private_support_config() -> None:
         private_support_genes="KIR2DS3",
         private_support_lambda=10.0,
         private_support_window=50.0,
+        highest_suffix_tie_break_genes="KIR2DS4",
     )
 
     plan = AlleleTyper("typing").plan(mapping, copy_number, config, "cohort")
@@ -150,4 +182,6 @@ def test_typing_plan_carries_private_support_config() -> None:
     assert plan.private_support_genes == "KIR2DS3"
     assert plan.private_support_lambda == 10.0
     assert plan.private_support_window == 50.0
+    assert plan.highest_suffix_tie_break_genes == "KIR2DS4"
     assert plan.samples[0].private_support_genes == "KIR2DS3"
+    assert plan.samples[0].highest_suffix_tie_break_genes == "KIR2DS4"

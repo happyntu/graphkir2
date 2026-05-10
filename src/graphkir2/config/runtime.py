@@ -69,6 +69,7 @@ class TypingConfig:
     private_support_genes: str = ""
     private_support_lambda: float = 0.0
     private_support_window: float = 0.0
+    highest_suffix_tie_break_genes: str = ""
 
 
 @dataclass(frozen=True)

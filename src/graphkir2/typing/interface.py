@@ -48,6 +48,7 @@ class SampleTypingPlan:
     private_support_genes: str
     private_support_lambda: float
     private_support_window: float
+    highest_suffix_tie_break_genes: str
 
 
 @dataclass(frozen=True)
@@ -65,6 +66,7 @@ class TypingPlan:
     private_support_genes: str
     private_support_lambda: float
     private_support_window: float
+    highest_suffix_tie_break_genes: str
     merged_allele_tsv: str
     samples: tuple[SampleTypingPlan, ...]
 
@@ -83,6 +85,7 @@ class TypingPlan:
             f"private_support_genes={self.private_support_genes or '<none>'}",
             f"private_support_lambda={self.private_support_lambda}",
             f"private_support_window={self.private_support_window}",
+            f"highest_suffix_tie_break_genes={self.highest_suffix_tie_break_genes or '<none>'}",
             f"merged_allele_tsv={self.merged_allele_tsv}",
             f"samples={len(self.samples)}",
         ]
@@ -106,6 +109,7 @@ class TypingPlan:
                     f"  private_support_genes={sample.private_support_genes or '<none>'}",
                     f"  private_support_lambda={sample.private_support_lambda}",
                     f"  private_support_window={sample.private_support_window}",
+                    f"  highest_suffix_tie_break_genes={sample.highest_suffix_tie_break_genes or '<none>'}",
                 ]
             )
         return "\n".join(lines)
@@ -156,6 +160,7 @@ class AlleleTyper:
                     private_support_genes=config.private_support_genes,
                     private_support_lambda=config.private_support_lambda,
                     private_support_window=config.private_support_window,
+                    highest_suffix_tie_break_genes=config.highest_suffix_tie_break_genes,
                 )
             )
 
@@ -171,6 +176,7 @@ class AlleleTyper:
             private_support_genes=config.private_support_genes,
             private_support_lambda=config.private_support_lambda,
             private_support_window=config.private_support_window,
+            highest_suffix_tie_break_genes=config.highest_suffix_tie_break_genes,
             merged_allele_tsv=cohort_name + ".allele.tsv",
             samples=tuple(sample_plans),
         )

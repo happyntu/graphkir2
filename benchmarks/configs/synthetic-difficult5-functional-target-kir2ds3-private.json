@@ -19,6 +19,7 @@
   "allele_private_support_genes": "KIR2DS3",
   "allele_private_support_lambda": 10.0,
   "allele_private_support_window": 50.0,
+  "allele_highest_suffix_tie_break_genes": "KIR2DS4",
   "allele_truth_tsv": "benchmarks/generated/synthetic-difficult5/synthetic-difficult5_truth.tsv",
   "cn_diploid_gene": "",
   "cn_cohort": false,

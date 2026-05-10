@@ -109,6 +109,7 @@ class GraphKir2Pipeline:
                 f"typing_private_support_genes={self.config.typing.private_support_genes or '<none>'}",
                 f"typing_private_support_lambda={self.config.typing.private_support_lambda}",
                 f"typing_private_support_window={self.config.typing.private_support_window}",
+                f"typing_highest_suffix_tie_break_genes={self.config.typing.highest_suffix_tie_break_genes or '<none>'}",
                 f"diploid_gene={self.config.copy_number.diploid_gene or '<none>'}",
                 f"cohort_mode={self.config.copy_number.cohort_mode}",
                 f"assume_3dl3_diploid={self.config.copy_number.assume_3dl3_diploid}",

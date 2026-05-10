@@ -213,12 +213,14 @@ Current synthetic functional-target surface:
 * targeted `KIR2DS3` private-support reranking
 * directional `KIR2DS3/KIR2DS5` cross-gene ambiguity neutralization applied to
   the `KIR2DS3` target evidence, not to `KIR2DS5` typing evidence
+* `KIR2DS4` same-5-digit exact-likelihood tie-break that keeps the highest
+  full allele suffix
 
 This surface is represented by
 `benchmarks/configs/synthetic-difficult5-functional-target-kir2ds3-private.json`.
-It is the current lead for the `3-digit/5-digit` objective. The directional
-neutralization variant reaches `synthetic-difficult5` `1.0 / 1.0 / 0.95`,
-leaving `KIR2DS4` 7-digit resolution as the main remaining difficult5 tradeoff.
+It is the current lead for the `3-digit/5-digit` objective. The current
+synthetic difficult5 functional target reaches `1.0 / 1.0 / 1.0` without
+regressing `synthetic-functional8` or `synthetic-functional8x6`.
 
 ## Synthetic-First Workflow
 

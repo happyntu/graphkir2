@@ -350,14 +350,15 @@ def render_markdown(
             "reranking plus directional `KIR2DS3/KIR2DS5` cross-gene neutralization.",
             "It preserves `synthetic-functional8` and `synthetic-functional8x6` at",
             "the same `3/5-digit` scores as the top5000 baseline and raises",
-            "`synthetic-difficult5` to `3/5-digit = 1.0` and `7-digit = 0.95`.",
-            "Treat it as the current functional target.",
+            "`synthetic-difficult5` to `3/5/7-digit = 1.0` when combined with",
+            "the `KIR2DS4` same-5-digit highest-suffix tie-break. Treat it as the",
+            "current functional target.",
             "",
             "Remaining failure focus:",
             "",
             "* balanced baseline: `KIR2DL1` on `synthetic-functional8x6`",
             "* balanced baseline: `KIR2DS3` functional typing on `synthetic-difficult5`",
-            "* functional target: `KIR2DS4` 7-digit resolution on `synthetic-difficult5`",
+            "* functional target: no remaining synthetic-difficult5 error in this panel",
         ]
     )
     return "\n".join(lines) + "\n"

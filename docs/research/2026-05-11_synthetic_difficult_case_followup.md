@@ -483,6 +483,8 @@ Tested a narrower version of the joint-assignment idea:
   top_n=5000` candidate surface
 * neutralize only the explicit cross-gene ambiguity group `KIR2DS3/KIR2DS5`
 * rerank only `KIR2DS3` with private-variant support
+* for `KIR2DS4`, break exact-likelihood ties only within the same 5-digit
+  allele set by keeping the highest full allele suffix
 * use `private_support_lambda = 10`
 * use `private_support_window = 50`
 
@@ -507,6 +509,8 @@ reranking to every gene.
 * top5000 baseline: `0.975 / 0.975 / 0.925`
 * targeted private-support, broad neutralization: `1.0 / 1.0 / 0.9`
 * targeted private-support, directional neutralization: `1.0 / 1.0 / 0.95`
+* targeted private-support, directional neutralization, plus `KIR2DS4`
+  highest-suffix tie-break: `1.0 / 1.0 / 1.0`
 
 Per-gene `synthetic-difficult5` result for the targeted candidate:
 
@@ -514,12 +518,13 @@ Per-gene `synthetic-difficult5` result for the targeted candidate:
 * `KIR2DL5A = 1.0 / 1.0 / 1.0`
 * `KIR2DL5B = 1.0 / 1.0 / 1.0`
 * `KIR2DS3 = 1.0 / 1.0 / 1.0`
-* `KIR2DS4 = 1.0 / 1.0 / 0.75`
+* `KIR2DS4 = 1.0 / 1.0 / 1.0`
 * `KIR2DS5 = 1.0 / 1.0 / 1.0`
 
 The difficult sample `02` now calls the expected
-`KIR2DS3*0010301 + KIR2DS3*0011201`. The remaining tradeoff is that one
-`KIR2DS4` 7-digit call remains unresolved.
+`KIR2DS3*0010301 + KIR2DS3*0011201`. Samples `00` and `03` also now keep the
+expected `KIR2DS4*0010109` instead of the likelihood-tied
+`KIR2DS4*0010102`.
 
 Directional-neutralization finding:
 
@@ -529,6 +534,14 @@ Directional-neutralization finding:
   `KIR2DS3/KIR2DS5` ambiguous evidence
 * `KIR2DS5` keeps its own evidence and returns to `7-digit = 1.0`
 
+`KIR2DS4` tie-break finding:
+
+* the missed `KIR2DS4*0010109` calls were exact-likelihood ties with
+  `KIR2DS4*0010102` under the same `KIR2DS4*00101` 5-digit allele group
+* private-variant support did not resolve the tie in the correct direction
+* a narrow same-5-digit, exact-likelihood tie-break fixes the difficult5
+  7-digit calls without changing the `3/5-digit` result
+
 ## Current interpretation
 
 Keep two candidate labels:
@@ -537,13 +550,14 @@ Keep two candidate labels:
   `likelihood + exon_weight=2.0 + min_fraction_ratio=0.7 + top_n=5000`
 * functional-target candidate:
   balanced baseline plus targeted `KIR2DS3` private-support reranking and
-  directional `KIR2DS3/KIR2DS5` ambiguity neutralization
+  directional `KIR2DS3/KIR2DS5` ambiguity neutralization plus `KIR2DS4`
+  same-5-digit highest-suffix tie-break
 
 For the stated `graphkir2` objective, the functional-target candidate is the
 more relevant lead because it is the first tested method to reach
 `synthetic-difficult5` `3/5-digit = 1.0` without regressing the other synthetic
-functional panels. It also improves `synthetic-difficult5` `7-digit` above the
-balanced baseline after directional neutralization.
+functional panels. With the `KIR2DS4` tie-break, it reaches
+`synthetic-difficult5` `3/5/7-digit = 1.0`.
 
 Implementation follow-up:
 

@@ -124,6 +124,12 @@ def build_legacy_graphkir_command(config: GraphKir2RunConfig) -> LegacyCommandPl
             "legacy graphkir CLI has no private-support reranking flags; "
             "this graphkir2 config represents a refactor-only typing enhancement"
         )
+    if config.typing.highest_suffix_tie_break_genes:
+        exact_config_match = False
+        notes.append(
+            "legacy graphkir CLI has no highest-suffix tie-break flag; "
+            "this graphkir2 config represents a refactor-only typing enhancement"
+        )
     return LegacyCommandPlan(
         program="graphkir",
         args=args,

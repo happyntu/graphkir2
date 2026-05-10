@@ -48,6 +48,7 @@ class BenchmarkPreset:
     allele_private_support_genes: str = ""
     allele_private_support_lambda: float = 0.0
     allele_private_support_window: float = 0.0
+    allele_highest_suffix_tie_break_genes: str = ""
     allele_truth_tsv: str = ""
     cn_truth_tsv: str = ""
     cn_diploid_gene: str = ""
@@ -95,6 +96,7 @@ class BenchmarkPreset:
                 private_support_genes=self.allele_private_support_genes,
                 private_support_lambda=self.allele_private_support_lambda,
                 private_support_window=self.allele_private_support_window,
+                highest_suffix_tie_break_genes=self.allele_highest_suffix_tie_break_genes,
             ),
         )
 

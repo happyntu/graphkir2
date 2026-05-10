@@ -70,6 +70,7 @@ def main() -> None:
         parse_gene_groups,
         parse_gene_set,
         pure_gene,
+        select_with_highest_suffix_tie_break,
         select_with_private_support,
     )
 
@@ -101,6 +102,9 @@ def main() -> None:
     )
     neutralize_groups = parse_gene_groups(neutralize_group_spec)
     private_support_genes = parse_gene_set(private_support_gene_spec)
+    highest_suffix_tie_break_genes = parse_gene_set(
+        run_config.typing.highest_suffix_tie_break_genes
+    )
 
     rows: list[dict[str, str]] = []
     for sample in plan.samples:
@@ -157,6 +161,12 @@ def main() -> None:
                 private_support_window,
                 sample.select_min_fraction_ratio,
             )
+            if gene_name in highest_suffix_tie_break_genes:
+                selected = select_with_highest_suffix_tie_break(
+                    result,
+                    selected,
+                    sample.select_min_fraction_ratio,
+                )
             alleles.extend(
                 allele if allele != "fail" else f"{gene_name}*"
                 for allele in selected

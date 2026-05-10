@@ -24,6 +24,12 @@ def pure_gene(backbone: str) -> str:
     return backbone.split("*", 1)[0]
 
 
+def limit_allele_resolution(allele: str, resolution: int) -> str:
+    """Limit an allele name to a fixed numeric field length."""
+    gene, field = allele.split("*", 1)
+    return f"{gene}*{field[:resolution]}"
+
+
 def parse_gene_groups(spec: str) -> GeneGroups:
     """Parse comma-separated slash-delimited gene groups."""
     groups: list[frozenset[str]] = []
@@ -138,3 +144,43 @@ def select_with_private_support(
             best_score = score
             best_index = index
     return result.allele_name[best_index]  # type: ignore[attr-defined]
+
+
+def select_with_highest_suffix_tie_break(
+    result: object,
+    selected: list[str],
+    min_fraction_ratio: float,
+    resolution: int = 5,
+    value_epsilon: float = 1e-9,
+) -> list[str]:
+    """Prefer the highest full allele suffix only for exact same-resolution ties."""
+    if result.isFail():  # type: ignore[attr-defined]
+        return selected
+
+    expect_prob = 1 / int(result.n)  # type: ignore[attr-defined]
+    selected_key = sorted(limit_allele_resolution(allele, resolution) for allele in selected)
+    selected_index = 0
+    for index, allele_names in enumerate(result.allele_name):  # type: ignore[attr-defined]
+        if allele_names == selected:
+            selected_index = index
+            break
+    selected_value = float(result.value[selected_index])  # type: ignore[attr-defined]
+    candidates: list[list[str]] = []
+    for index, allele_names in enumerate(result.allele_name):  # type: ignore[attr-defined]
+        if abs(float(result.value[index]) - selected_value) > value_epsilon:  # type: ignore[attr-defined]
+            continue
+        if not all(
+            fraction >= expect_prob * min_fraction_ratio
+            for fraction in result.fraction[index]  # type: ignore[attr-defined]
+        ):
+            continue
+        candidate_key = sorted(
+            limit_allele_resolution(allele, resolution)
+            for allele in allele_names
+        )
+        if candidate_key != selected_key:
+            continue
+        candidates.append(allele_names)
+    if not candidates:
+        return selected
+    return max(candidates, key=lambda alleles: sorted(alleles))
