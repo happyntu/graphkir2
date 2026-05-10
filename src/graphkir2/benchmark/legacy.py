@@ -118,6 +118,8 @@ def build_legacy_graphkir_command(config: GraphKir2RunConfig) -> LegacyCommandPl
         config.typing.private_support_genes
         or config.typing.private_support_lambda != 0.0
         or config.typing.private_support_window != 0.0
+        or config.typing.private_support_condition_alleles
+        or config.typing.private_support_cross_gene_ratio != 0.0
     ):
         exact_config_match = False
         notes.append(

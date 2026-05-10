@@ -189,6 +189,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Only rerank candidates within this log-likelihood window.",
     )
     parser.add_argument(
+        "--allele-private-support-condition-alleles",
+        default="",
+        help="Comma-separated allele prefixes required before private-support rescue, e.g. `KIR2DS3*00201`.",
+    )
+    parser.add_argument(
+        "--allele-private-support-cross-gene-ratio",
+        type=float,
+        default=0.0,
+        help="Minimum cross-gene share of selected-private positive support before rescue.",
+    )
+    parser.add_argument(
         "--allele-highest-suffix-tie-break-genes",
         default="",
         help="Comma-separated genes where exact likelihood ties keep the highest 7-digit suffix within the same 5-digit call.",
@@ -262,6 +273,8 @@ def entrypoint() -> None:
             private_support_genes=args.allele_private_support_genes,
             private_support_lambda=args.allele_private_support_lambda,
             private_support_window=args.allele_private_support_window,
+            private_support_condition_alleles=args.allele_private_support_condition_alleles,
+            private_support_cross_gene_ratio=args.allele_private_support_cross_gene_ratio,
             highest_suffix_tie_break_genes=args.allele_highest_suffix_tie_break_genes,
         ),
         print_plan=args.print_plan,

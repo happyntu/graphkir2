@@ -46,6 +46,8 @@ class BenchmarkSummary:
                 f"typing_exon_weight={self.typing.exon_weight}",
                 f"typing_gene_exon_weights={self.typing.gene_exon_weights or '<none>'}",
                 f"typing_private_support_genes={self.typing.private_support_genes or '<none>'}",
+                f"typing_private_support_condition_alleles={self.typing.private_support_condition_alleles or '<none>'}",
+                f"typing_private_support_cross_gene_ratio={self.typing.private_support_cross_gene_ratio}",
                 f"merged_cn={self.copy_number.cohort.merged_cn_tsv}",
                 f"merged_alleles={self.typing.merged_allele_tsv}",
             ]
@@ -79,6 +81,8 @@ class ComparisonSummary:
                 f"typing_exon_weight={self.benchmark.typing.exon_weight}",
                 f"typing_gene_exon_weights={self.benchmark.typing.gene_exon_weights or '<none>'}",
                 f"typing_private_support_genes={self.benchmark.typing.private_support_genes or '<none>'}",
+                f"typing_private_support_condition_alleles={self.benchmark.typing.private_support_condition_alleles or '<none>'}",
+                f"typing_private_support_cross_gene_ratio={self.benchmark.typing.private_support_cross_gene_ratio}",
                 f"graphkir2_cn={self.benchmark.copy_number.cohort.merged_cn_tsv}",
                 f"graphkir2_alleles={self.benchmark.typing.merged_allele_tsv}",
             ]

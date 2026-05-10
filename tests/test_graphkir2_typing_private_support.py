@@ -14,8 +14,11 @@ from graphkir2.typing.private_support import (
     collect_variant_support,
     neutralize_cross_gene_reads,
     parse_gene_groups,
+    parse_name_set,
+    private_positive_cross_gene_ratio,
     select_with_highest_suffix_tie_break,
     select_with_private_support,
+    should_apply_conditional_private_support,
 )
 
 
@@ -122,6 +125,73 @@ def test_private_support_can_select_lower_likelihood_supported_candidate() -> No
     assert selected == ["KIR2DS3*0010301", "KIR2DS3*0011201"]
 
 
+def test_conditional_private_support_uses_cross_gene_ratio_gate() -> None:
+    reads = [
+        DummyRead(
+            "KIR2DS3*BACKBONE",
+            "pair1\tA",
+            "",
+            4.0,
+            0.0,
+            ["v_private"],
+            [],
+            [],
+            [],
+        ),
+        DummyRead("KIR2DS5*BACKBONE", "pair1\tB", "", 1.0, 0.0, [], [], [], []),
+        DummyRead(
+            "KIR2DS3*BACKBONE",
+            "pair2\tA",
+            "",
+            1.0,
+            0.0,
+            ["v_private"],
+            [],
+            [],
+            [],
+        ),
+    ]
+    selected = ["KIR2DS3*0020101", "KIR2DS3*0011201"]
+    allele_variants = {
+        "KIR2DS3*0020101": {"v_private"},
+        "KIR2DS3*0011201": set(),
+    }
+    groups = parse_gene_groups("KIR2DS3/KIR2DS5")
+
+    ratio = private_positive_cross_gene_ratio(
+        reads,
+        selected,
+        allele_variants,
+        groups,
+    )
+
+    assert ratio == 0.8
+    assert should_apply_conditional_private_support(
+        selected,
+        reads,
+        allele_variants,
+        parse_name_set("KIR2DS3*00201"),
+        groups,
+        0.8,
+    )
+    assert not should_apply_conditional_private_support(
+        selected,
+        reads,
+        allele_variants,
+        parse_name_set("KIR2DS3*00201"),
+        groups,
+        0.85,
+    )
+    assert not should_apply_conditional_private_support(
+        ["KIR2DS3*0010301", "KIR2DS3*0011201"],
+        reads,
+        allele_variants,
+        parse_name_set("KIR2DS3*00201"),
+        groups,
+        0.8,
+    )
+
+
 def test_highest_suffix_tie_break_keeps_same_five_digit_call() -> None:
     selected = select_with_highest_suffix_tie_break(
         DummyTieResult(),
@@ -173,6 +243,8 @@ def test_typing_plan_carries_private_support_config() -> None:
         private_support_genes="KIR2DS3",
         private_support_lambda=10.0,
         private_support_window=50.0,
+        private_support_condition_alleles="KIR2DS3*00201",
+        private_support_cross_gene_ratio=0.8,
         highest_suffix_tie_break_genes="KIR2DS4",
     )
 
@@ -182,6 +254,10 @@ def test_typing_plan_carries_private_support_config() -> None:
     assert plan.private_support_genes == "KIR2DS3"
     assert plan.private_support_lambda == 10.0
     assert plan.private_support_window == 50.0
+    assert plan.private_support_condition_alleles == "KIR2DS3*00201"
+    assert plan.private_support_cross_gene_ratio == 0.8
     assert plan.highest_suffix_tie_break_genes == "KIR2DS4"
     assert plan.samples[0].private_support_genes == "KIR2DS3"
+    assert plan.samples[0].private_support_condition_alleles == "KIR2DS3*00201"
+    assert plan.samples[0].private_support_cross_gene_ratio == 0.8
     assert plan.samples[0].highest_suffix_tie_break_genes == "KIR2DS4"

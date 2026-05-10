@@ -92,7 +92,7 @@ contamination evidence. A global per-gene rule is not robust enough.
 
 ## Conditional Rescue Ablation
 
-Tested a first contamination-gated rescue rule:
+Tested and then formalized a first contamination-gated rescue rule:
 
 * start from balanced likelihood selection
 * only enable `KIR2DS3` private-support rescue when the selected allele set has
@@ -100,6 +100,15 @@ Tested a first contamination-gated rescue rule:
 * require that the selected allele set's private-variant positive support is
   mostly carried by `KIR2DS3/KIR2DS5` cross-gene ambiguous reads
 * sweep cross-support ratio thresholds: `0.80`, `0.85`, `0.90`
+
+The `0.80` gate is now reproducible through:
+
+* `benchmarks/configs/synthetic-difficult5-conditional-kir2ds3-ratio080.json`
+* `benchmarks/configs/synthetic-difficult5x12-conditional-kir2ds3-ratio080.json`
+
+Implementation detail: the gate is evaluated on sample-level reads so the
+`KIR2DS3/KIR2DS5` physical-read ambiguity is visible, then the target gene is
+rerun with directional neutralization only if the gate passes.
 
 Results:
 
@@ -122,7 +131,6 @@ Interpretation:
 
 Decision:
 
-Do not promote the ratio gate as a final rule yet. Keep it as evidence that
-conditional rescue is the right direction, but the next gate needs a second
-criterion that avoids changing cases where discard already makes the correct
-`KIR2DS3` functional call.
+Do not promote the ratio gate as a final default yet. Keep it as the current
+targeted experimental candidate and add a second criterion that avoids changing
+cases where discard already makes the correct `KIR2DS3` functional call.

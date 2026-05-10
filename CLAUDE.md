@@ -230,14 +230,22 @@ surface still regresses `KIR2DS3` versus the discard baseline:
 * balanced likelihood top5000: `0.925 / 0.925 / 0.9083`
 * functional target: `0.9417 / 0.9417 / 0.9167`
 
-Next method work should make `KIR2DS3` private-support / cross-gene
-neutralization conditional on explicit contamination evidence, rather than
-applying it as a broad per-gene rule.
+`graphkir2` now exposes an experimental conditional rescue gate:
 
-A first conditional ablation using a `KIR2DS3*00201` cross-support ratio gate
-improved `synthetic-difficult5x12` to `0.9583 / 0.9583 / 0.9333`, but still did
-not recover discard's `KIR2DS3` robustness. Treat this as supporting evidence
-for conditional rescue, not as the final gate.
+* `allele_private_support_condition_alleles = KIR2DS3*00201`
+* `allele_private_support_cross_gene_ratio = 0.8`
+
+This first formalized conditional gate starts from the balanced likelihood call,
+checks sample-level `KIR2DS3/KIR2DS5` cross-gene support, then reruns directional
+neutralized private-support rescue only when the gate passes. It is represented
+by `benchmarks/configs/synthetic-difficult5-conditional-kir2ds3-ratio080.json`
+and
+`benchmarks/configs/synthetic-difficult5x12-conditional-kir2ds3-ratio080.json`.
+
+The formalized gate keeps `synthetic-difficult5` at `1.0 / 1.0 / 1.0` and
+improves `synthetic-difficult5x12` to `0.9583 / 0.9583 / 0.9333`, but still does
+not recover discard's `KIR2DS3` robustness. Treat this as the current targeted
+experimental candidate, not as the final default.
 
 ## Synthetic-First Workflow
 

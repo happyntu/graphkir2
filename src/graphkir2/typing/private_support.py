@@ -8,6 +8,7 @@ from typing import Any
 
 VariantSupport = defaultdict[str, float]
 GeneGroups = tuple[frozenset[str], ...]
+NameSet = frozenset[str]
 
 
 def read_pair_name(read: object) -> str:
@@ -45,6 +46,11 @@ def parse_gene_set(spec: str) -> frozenset[str]:
     return frozenset(gene.strip() for gene in spec.split(",") if gene.strip())
 
 
+def parse_name_set(spec: str) -> NameSet:
+    """Parse a comma-separated set of allele or gene names."""
+    return frozenset(name.strip() for name in spec.split(",") if name.strip())
+
+
 def neutralize_cross_gene_reads(
     reads: list[Any],
     gene_groups: GeneGroups = (),
@@ -65,6 +71,23 @@ def neutralize_cross_gene_reads(
                 continue
             read.weight = 0.0
             read.ambiguous_weight = 1.0
+
+
+def cross_gene_read_names(reads: list[Any], gene_groups: GeneGroups = ()) -> set[str]:
+    """Return physical read names that span configured cross-gene groups."""
+    reads_by_name: dict[str, list[Any]] = defaultdict(list)
+    for read in reads:
+        reads_by_name[read_pair_name(read)].append(read)
+
+    cross_names: set[str] = set()
+    for name, read_group in reads_by_name.items():
+        genes = {pure_gene(read.backbone) for read in read_group}
+        if len(genes) <= 1:
+            continue
+        if gene_groups and not any(len(genes & group) >= 2 for group in gene_groups):
+            continue
+        cross_names.add(name)
+    return cross_names
 
 
 def collect_variant_support(reads: list[Any]) -> tuple[VariantSupport, VariantSupport]:
@@ -111,6 +134,82 @@ def private_support_score(
         )
         score += 5.0 * supported - 10.0 * unsupported + 0.1 * net_support
     return score
+
+
+def collect_private_variants(
+    allele_names: list[str],
+    allele_variants: dict[str, set[str]],
+) -> set[str]:
+    """Collect variants private to each selected allele within a genotype."""
+    private_variants: set[str] = set()
+    for allele in allele_names:
+        other_variants = set().union(
+            *(allele_variants[other] for other in allele_names if other != allele)
+        )
+        private_variants.update(allele_variants[allele] - other_variants)
+    return private_variants
+
+
+def private_positive_cross_gene_ratio(
+    reads: list[Any],
+    allele_names: list[str],
+    allele_variants: dict[str, set[str]],
+    gene_groups: GeneGroups = (),
+) -> float:
+    """Estimate how much selected-private positive support is cross-gene ambiguous."""
+    private_variants = collect_private_variants(allele_names, allele_variants)
+    if not private_variants:
+        return 0.0
+
+    cross_names = cross_gene_read_names(reads, gene_groups)
+    cross_support = 0.0
+    total_support = 0.0
+    for read in reads:
+        weight = float(read.weight)
+        if weight <= 0.0:
+            continue
+        read_support = sum(
+            weight
+            for variant_id in read.lpv + read.rpv
+            if variant_id in private_variants
+        )
+        total_support += read_support
+        if read_pair_name(read) in cross_names:
+            cross_support += read_support
+    if total_support <= 0.0:
+        return 0.0
+    return cross_support / total_support
+
+
+def selected_has_name_prefix(allele_names: list[str], prefixes: NameSet) -> bool:
+    """Check whether a selected allele starts with one of the configured prefixes."""
+    return any(
+        allele.startswith(prefix)
+        for allele in allele_names
+        for prefix in prefixes
+    )
+
+
+def should_apply_conditional_private_support(
+    selected: list[str],
+    reads: list[Any],
+    allele_variants: dict[str, set[str]],
+    condition_alleles: NameSet,
+    gene_groups: GeneGroups,
+    min_cross_gene_ratio: float,
+) -> bool:
+    """Decide whether private-support rescue is justified for a selected call."""
+    if condition_alleles and not selected_has_name_prefix(selected, condition_alleles):
+        return False
+    if min_cross_gene_ratio <= 0.0:
+        return True
+    ratio = private_positive_cross_gene_ratio(
+        reads,
+        selected,
+        allele_variants,
+        gene_groups,
+    )
+    return ratio >= min_cross_gene_ratio
 
 
 def select_with_private_support(

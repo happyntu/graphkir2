@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 import pandas as pd
@@ -44,6 +45,17 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Only rerank candidates within this log-likelihood window.",
     )
+    parser.add_argument(
+        "--private-support-condition-alleles",
+        default=None,
+        help="Optional comma-separated allele prefixes required before rescue.",
+    )
+    parser.add_argument(
+        "--private-support-cross-gene-ratio",
+        type=float,
+        default=None,
+        help="Optional minimum cross-gene ratio for selected-private positive support.",
+    )
     return parser
 
 
@@ -69,9 +81,11 @@ def main() -> None:
         neutralize_cross_gene_reads,
         parse_gene_groups,
         parse_gene_set,
+        parse_name_set,
         pure_gene,
         select_with_highest_suffix_tie_break,
         select_with_private_support,
+        should_apply_conditional_private_support,
     )
 
     args = build_parser().parse_args()
@@ -100,8 +114,22 @@ def main() -> None:
         if args.private_support_window is not None
         else run_config.typing.private_support_window
     )
+    private_support_condition_spec = (
+        args.private_support_condition_alleles
+        if args.private_support_condition_alleles is not None
+        else run_config.typing.private_support_condition_alleles
+    )
+    private_support_cross_gene_ratio = (
+        args.private_support_cross_gene_ratio
+        if args.private_support_cross_gene_ratio is not None
+        else run_config.typing.private_support_cross_gene_ratio
+    )
     neutralize_groups = parse_gene_groups(neutralize_group_spec)
     private_support_genes = parse_gene_set(private_support_gene_spec)
+    private_support_condition_alleles = parse_name_set(private_support_condition_spec)
+    has_conditional_gate = bool(
+        private_support_condition_alleles or private_support_cross_gene_ratio > 0.0
+    )
     highest_suffix_tie_break_genes = parse_gene_set(
         run_config.typing.highest_suffix_tie_break_genes
     )
@@ -109,7 +137,7 @@ def main() -> None:
     rows: list[dict[str, str]] = []
     for sample in plan.samples:
         reads_data = likelihoodAmbiguousMapped(loadReadsAndVariantsData(sample.variant_json))
-        if args.neutralize_cross_gene or neutralize_groups:
+        if (args.neutralize_cross_gene or neutralize_groups) and not has_conditional_gate:
             neutralize_cross_gene_reads(
                 reads_data["reads"],
                 neutralize_groups,
@@ -152,6 +180,50 @@ def main() -> None:
             support_lambda = private_support_lambda
             if private_support_genes and gene_name not in private_support_genes:
                 support_lambda = 0.0
+            if support_lambda and (
+                private_support_condition_alleles
+                or private_support_cross_gene_ratio > 0.0
+            ):
+                selected_without_rescue = result.selectBest(
+                    min_fraction_ratio=sample.select_min_fraction_ratio
+                )
+                should_rescue = should_apply_conditional_private_support(
+                    selected_without_rescue,
+                    reads_data["reads"],
+                    allele_variants,
+                    private_support_condition_alleles,
+                    neutralize_groups,
+                    private_support_cross_gene_ratio,
+                )
+                if should_rescue and neutralize_groups:
+                    rescue_reads_data = deepcopy(reads_data["reads"])
+                    neutralize_cross_gene_reads(
+                        rescue_reads_data,
+                        neutralize_groups,
+                        target_genes=private_support_genes,
+                    )
+                    rescue_gene_reads = groupReads(rescue_reads_data)
+                    model = AlleleTyping(
+                        rescue_gene_reads[gene],
+                        gene_variants[gene],
+                        top_n=args.top_n,
+                        variant_correction=True,
+                        exon_weight=2.0,
+                        ambiguity_likelihood=True,
+                        ambiguity_neutral_prob=0.999,
+                    )
+                    result = model.typing(copy_number)
+                    positive, negative = collect_variant_support(model.reads)
+                    allele_variants = {
+                        allele: {
+                            str(variant.id)
+                            for variant in gene_variants[gene]
+                            if allele in variant.allele
+                        }
+                        for allele in model.allele_to_id
+                    }
+                elif not should_rescue:
+                    support_lambda = 0.0
             selected = select_with_private_support(
                 result,
                 allele_variants,
