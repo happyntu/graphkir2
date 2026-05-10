@@ -234,6 +234,11 @@ Next method work should make `KIR2DS3` private-support / cross-gene
 neutralization conditional on explicit contamination evidence, rather than
 applying it as a broad per-gene rule.
 
+A first conditional ablation using a `KIR2DS3*00201` cross-support ratio gate
+improved `synthetic-difficult5x12` to `0.9583 / 0.9583 / 0.9333`, but still did
+not recover discard's `KIR2DS3` robustness. Treat this as supporting evidence
+for conditional rescue, not as the final gate.
+
 ## Synthetic-First Workflow
 
 For `graphkir2`, prefer a synthetic-first benchmark and tuning loop:

@@ -89,3 +89,40 @@ not the default.
 Next method work should make `KIR2DS3` private-support and
 `KIR2DS3/KIR2DS5` directional neutralization conditional on explicit
 contamination evidence. A global per-gene rule is not robust enough.
+
+## Conditional Rescue Ablation
+
+Tested a first contamination-gated rescue rule:
+
+* start from balanced likelihood selection
+* only enable `KIR2DS3` private-support rescue when the selected allele set has
+  a `KIR2DS3*00201` allele
+* require that the selected allele set's private-variant positive support is
+  mostly carried by `KIR2DS3/KIR2DS5` cross-gene ambiguous reads
+* sweep cross-support ratio thresholds: `0.80`, `0.85`, `0.90`
+
+Results:
+
+| method | 3-digit | 5-digit | 7-digit | KIR2DS3 5-digit |
+|---|---:|---:|---:|---:|
+| discard baseline | 0.9667 | 0.9583 | 0.9250 | 0.9167 |
+| balanced likelihood top5000 | 0.9250 | 0.9250 | 0.9083 | 0.7083 |
+| functional target | 0.9417 | 0.9417 | 0.9167 | 0.7917 |
+| conditional rescue, ratio >= 0.80 | 0.9583 | 0.9583 | 0.9333 | 0.8750 |
+| conditional rescue, ratio >= 0.85 | 0.9500 | 0.9500 | 0.9250 | 0.8333 |
+| conditional rescue, ratio >= 0.90 | 0.9250 | 0.9250 | 0.9083 | 0.7083 |
+
+Interpretation:
+
+* the ratio-gated rescue is better than the broad functional-target rule
+* threshold `0.80` matches discard at `5-digit` and exceeds discard at `7-digit`
+* it still trails discard at `3-digit` because `KIR2DS3` remains weaker
+* a single cross-support ratio is not sufficient to decide all `KIR2DS3`
+  rescue cases
+
+Decision:
+
+Do not promote the ratio gate as a final rule yet. Keep it as evidence that
+conditional rescue is the right direction, but the next gate needs a second
+criterion that avoids changing cases where discard already makes the correct
+`KIR2DS3` functional call.
