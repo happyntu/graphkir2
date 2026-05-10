@@ -505,7 +505,8 @@ reranking to every gene.
 `synthetic-difficult5`:
 
 * top5000 baseline: `0.975 / 0.975 / 0.925`
-* targeted private-support: `1.0 / 1.0 / 0.9`
+* targeted private-support, broad neutralization: `1.0 / 1.0 / 0.9`
+* targeted private-support, directional neutralization: `1.0 / 1.0 / 0.95`
 
 Per-gene `synthetic-difficult5` result for the targeted candidate:
 
@@ -514,12 +515,19 @@ Per-gene `synthetic-difficult5` result for the targeted candidate:
 * `KIR2DL5B = 1.0 / 1.0 / 1.0`
 * `KIR2DS3 = 1.0 / 1.0 / 1.0`
 * `KIR2DS4 = 1.0 / 1.0 / 0.75`
-* `KIR2DS5 = 1.0 / 1.0 / 0.75`
+* `KIR2DS5 = 1.0 / 1.0 / 1.0`
 
 The difficult sample `02` now calls the expected
 `KIR2DS3*0010301 + KIR2DS3*0011201`. The remaining tradeoff is that one
-`KIR2DS5` call shifts from the truth `KIR2DS5*0020105` to
-`KIR2DS5*0020120`, preserving `3/5-digit` but lowering `7-digit`.
+`KIR2DS4` 7-digit call remains unresolved.
+
+Directional-neutralization finding:
+
+* broad neutralization rescued `KIR2DS3` but also removed useful `KIR2DS5`
+  ambiguous evidence, lowering `KIR2DS5` 7-digit
+* directional neutralization zeros only the target `KIR2DS3` side of the
+  `KIR2DS3/KIR2DS5` ambiguous evidence
+* `KIR2DS5` keeps its own evidence and returns to `7-digit = 1.0`
 
 ## Current interpretation
 
@@ -529,13 +537,13 @@ Keep two candidate labels:
   `likelihood + exon_weight=2.0 + min_fraction_ratio=0.7 + top_n=5000`
 * functional-target candidate:
   balanced baseline plus targeted `KIR2DS3` private-support reranking and
-  `KIR2DS3/KIR2DS5` ambiguity neutralization
+  directional `KIR2DS3/KIR2DS5` ambiguity neutralization
 
 For the stated `graphkir2` objective, the functional-target candidate is the
 more relevant lead because it is the first tested method to reach
 `synthetic-difficult5` `3/5-digit = 1.0` without regressing the other synthetic
-functional panels. It should not yet be treated as the final default because it
-has an explicit `7-digit` tradeoff on `KIR2DS5`.
+functional panels. It also improves `synthetic-difficult5` `7-digit` above the
+balanced baseline after directional neutralization.
 
 Implementation follow-up:
 

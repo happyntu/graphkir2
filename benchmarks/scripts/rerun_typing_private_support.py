@@ -106,7 +106,11 @@ def main() -> None:
     for sample in plan.samples:
         reads_data = likelihoodAmbiguousMapped(loadReadsAndVariantsData(sample.variant_json))
         if args.neutralize_cross_gene or neutralize_groups:
-            neutralize_cross_gene_reads(reads_data["reads"], neutralize_groups)
+            neutralize_cross_gene_reads(
+                reads_data["reads"],
+                neutralize_groups,
+                target_genes=private_support_genes,
+            )
         gene_reads = groupReads(reads_data["reads"])
         gene_variants = groupVariants(reads_data["variants"])
         dummy_model = TypingWithPosNegAllele.__new__(TypingWithPosNegAllele)

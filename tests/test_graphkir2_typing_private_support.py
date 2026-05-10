@@ -57,6 +57,22 @@ def test_private_support_neutralizes_configured_cross_gene_group_only() -> None:
     assert [read.ambiguous_weight for read in reads] == [1.0, 1.0, 0.5, 0.5]
 
 
+def test_private_support_can_neutralize_only_target_gene_in_cross_gene_group() -> None:
+    reads = [
+        DummyRead("KIR2DS3*BACKBONE", "pair1\tA", "", 0.5, 0.5, [], [], [], []),
+        DummyRead("KIR2DS5*BACKBONE", "pair1\tB", "", 0.5, 0.5, [], [], [], []),
+    ]
+
+    neutralize_cross_gene_reads(
+        reads,
+        parse_gene_groups("KIR2DS3/KIR2DS5"),
+        target_genes=frozenset({"KIR2DS3"}),
+    )
+
+    assert [read.weight for read in reads] == [0.0, 0.5]
+    assert [read.ambiguous_weight for read in reads] == [1.0, 0.5]
+
+
 def test_private_support_can_select_lower_likelihood_supported_candidate() -> None:
     reads = [
         DummyRead("KIR2DS3*BACKBONE", "pair1\tA", "", 1.0, 0.0, ["v_truth"], [], ["v_false"], []),

@@ -42,6 +42,7 @@ def parse_gene_set(spec: str) -> frozenset[str]:
 def neutralize_cross_gene_reads(
     reads: list[Any],
     gene_groups: GeneGroups = (),
+    target_genes: frozenset[str] = frozenset(),
 ) -> None:
     """Remove allele-specific target evidence from cross-gene ambiguous reads."""
     reads_by_name: dict[str, list[Any]] = defaultdict(list)
@@ -54,6 +55,8 @@ def neutralize_cross_gene_reads(
         if gene_groups and not any(len(genes & group) >= 2 for group in gene_groups):
             continue
         for read in read_group:
+            if target_genes and pure_gene(read.backbone) not in target_genes:
+                continue
             read.weight = 0.0
             read.ambiguous_weight = 1.0
 
