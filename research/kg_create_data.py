@@ -16,7 +16,7 @@ def readHaplo():
 
     This csv file is from ping_paper_scripts/synthetic_sequence/KIR_gene_haplotypes.csv
     """
-    data = pd.read_csv("KIR_gene_haplotypes.csv")
+    data = pd.read_csv("data/reference/KIR_gene_haplotypes.csv")
     data.index = data["hapID"]
     print("Haplotype")
     print(data)

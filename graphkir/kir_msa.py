@@ -7,7 +7,8 @@ from typing import Callable
 from itertools import chain
 from collections import defaultdict
 
-from Bio import SeqIO, SeqRecord, Align
+from Bio import SeqIO, Align
+from Bio.SeqRecord import SeqRecord
 from pyhlamsa import Genemsa, KIRmsa
 
 from .external_tools import runTool
@@ -124,7 +125,7 @@ def blockToFile(blocks: BlockMsa, tmp_prefix: str = "tmp") -> BlockFile:
     for block_name, recs in blocks.items():
         filename = tmp_prefix + "." + block_name
         files[block_name] = filename
-        recs = [rec for rec in recs if len(rec.seq)]  # remove 0 length sequences
+        recs = [rec for rec in recs if rec.seq and len(rec.seq)]  # remove 0 length sequences
         SeqIO.write(recs, filename + ".fa", "fasta")
     return files
 
@@ -203,8 +204,8 @@ def mergeBlockToMsa(blocks: BlockMsa) -> Genemsa:
             blk.append(allele, "-" * blk.get_length())
 
         # merge
-        msa += blk
-        current_alleles = msa.alleles.keys()
+            msa += blk
+            current_alleles = set(msa.alleles.keys())
 
     assert msa
     msa = msa.assume_label("gen")

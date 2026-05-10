@@ -102,10 +102,10 @@ Run Graph-KIR (If the index does not exist, it will be auto-built):
 ``` bash
 graphkir \
     --thread 2 \
-    --r1 example/test00.read1.fq.gz \
-    --r2 example/test00.read2.fq.gz \
-    --r1 example/test01.read1.fq.gz \
-    --r2 example/test01.read2.fq.gz \
+    --r1 examples/test00.read1.fq.gz \
+    --r2 examples/test00.read2.fq.gz \
+    --r1 examples/test01.read1.fq.gz \
+    --r2 examples/test01.read2.fq.gz \
     --index-folder example_index \
     --output-folder example_data \
     --output-cohort-name example_data/cohort
@@ -116,7 +116,7 @@ Or, if you have an input CSV file (e.g., `cohort.csv`) containing the list of sa
 ``` bash
 graphkir \
     --thread 2 \
-    --input-csv example/cohort.csv \
+    --input-csv examples/cohort.csv \
     --index-folder example_index \
     --allele-strategy exonfirst \
     --output-cohort-name example_data/cohort \
@@ -131,8 +131,8 @@ The CSV should have four columns:
 
 ``` csv
 name,r1,r2,cnfile
-example_data/linnil1.00,example/test00.read1.fq.gz,example/test00.read2.fq.gz,example/test00.assigned.cn.tsv
-example_data/linnil1.01,example/test01.read1.fq.gz,example/test01.read2.fq.gz,
+example_data/linnil1.00,examples/test00.read1.fq.gz,examples/test00.read2.fq.gz,examples/test00.assigned.cn.tsv
+example_data/linnil1.01,examples/test01.read1.fq.gz,examples/test01.read2.fq.gz,
 ```
 
 The final result that includes all the samples are aggrate into one file with prefix `output-cohort-name`.
@@ -151,10 +151,10 @@ Some useful arguments include:
 
 ## Usage (`kirpipe` pipeline for other KIR tools)
 ```
-ln -s ../example/test00.read1.fq.gz example_data/test.00.read.1.fq.gz
-ln -s ../example/test00.read2.fq.gz example_data/test.00.read.2.fq.gz
-ln -s ../example/test01.read1.fq.gz example_data/test.01.read.1.fq.gz
-ln -s ../example/test01.read2.fq.gz example_data/test.01.read.2.fq.gz
+ln -s ../examples/test00.read1.fq.gz example_data/test.00.read.1.fq.gz
+ln -s ../examples/test00.read2.fq.gz example_data/test.00.read.2.fq.gz
+ln -s ../examples/test01.read1.fq.gz example_data/test.01.read.1.fq.gz
+ln -s ../examples/test01.read2.fq.gz example_data/test.01.read.2.fq.gz
 kirpipe example_data/test.{} --tools t1k
 ```
 
@@ -162,6 +162,7 @@ kirpipe example_data/test.{} --tools t1k
 ## Usage (for paper)
 
 If you want to develop or rerun the code related to the Graph-KIR research, check out the `research/` directory.
+Static inputs used by those scripts now live under `data/`.
 
 Most of these scripts are not automated and require manual configuration or linking to your cohort (e.g., HPRC).
 You may also need to adjust arguments to run Graph-KIR with different configurations.
@@ -182,7 +183,17 @@ Evaluation code and data for v2:
 
 * `research/kg_eval_hprc_alldigit.py`
 * `research/kg_eval_hprc_remove_novel.py`
-* `research/groundtruth/hprc_annotation_skirt.tsv`
+* `data/groundtruth/hprc_summary_v1_2_e.tsv`
+
+## Repository layout
+
+The repository is now organized with clearer top-level boundaries:
+
+* `graphkir/` and `kir/`: installable Python packages and CLI entrypoints
+* `examples/`: small example FASTQ inputs and expected outputs
+* `data/`: static cohort/reference/ground-truth inputs used by research scripts
+* `research/`: paper and benchmark scripts, experimental pipelines, cluster templates
+* `docs/`: MkDocs site content and manuscript artifacts
 
 
 ## Related tools

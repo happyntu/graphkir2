@@ -350,13 +350,16 @@ class SakaueKir(KirPipe):
         alleles = []
         name_id = ""
         for i in raw_df.itertuples():
-            name_id = i.id
+            name_id = str(i.id)
             if i.type == "known":
-                alleles_text = i.alleles.replace("_", "*")
+                alleles_text = str(i.alleles).replace("_", "*")
                 possible_set = alleles_text.split("-or-")
             elif i.type == "potentially_novel":
                 alleles_text = (
-                    i.alleles.replace("Close_to_", "").replace("_", "*").split("[")[0]
+                    str(i.alleles)
+                    .replace("Close_to_", "")
+                    .replace("_", "*")
+                    .split("[")[0]
                 )
                 possible_set = alleles_text.split("-OR-")
             else:

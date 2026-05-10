@@ -341,7 +341,7 @@ class AlleleTyping:
         """Position/Negative variants in read -> probility of read belonged to allele"""
         probs = []
         for read in reads:
-            prob_mod = []
+            prob_mod: list[FloatNdArray] = []
             """
             d_tune = 100 #deletion score tunning, mismatch panelty: 0.001 x d_tune
             
@@ -505,9 +505,12 @@ class AlleleTyping:
             return self.result[-1]
 
         if candidate_allele is None:
-            allele_index = np.arange(self.log_probs.shape[1])                  # size: allele (select all)
+            allele_index: IdArray = np.arange(self.log_probs.shape[1])         # size: allele (select all)
         else:
-            allele_index = np.array(list(map(self.allele_to_id.get, candidate_allele)))
+            allele_index = np.array(
+                [self.allele_to_id[allele] for allele in candidate_allele],
+                dtype=int,
+            )
                                                                                # size: allele (select partial)
         if not len(self.result):
             # first time: i.e. CN = 1

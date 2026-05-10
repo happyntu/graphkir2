@@ -19,7 +19,7 @@ import pandas as pd
 from pyhlamsa import Genemsa
 
 import requests
-from tqdm import tqdm
+from tqdm import tqdm  # type: ignore[import-untyped]
 
 
 class _ResType(TypedDict):
@@ -120,7 +120,7 @@ class NumpyEncoder(json.JSONEncoder):
     """The encoder for saving numpy array to json"""
 
     def default(self, obj: Any) -> Any:  # I don't know the exact format
-        if dataclasses.is_dataclass(obj):
+        if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
             return dataclasses.asdict(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()

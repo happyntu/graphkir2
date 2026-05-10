@@ -42,7 +42,7 @@ from kg_eval_cn import compareCNResult
 
 
 def linkHPRCSample(input_folder):
-    df = pd.read_csv("hprc.csv")
+    df = pd.read_csv("data/cohorts/hprc.csv")
     fastq_folder = "/staging/biology/zxc898977/rawData/WGS_Ncbi"
     df = df[df["sample_id"].notna()]
     print(df)

@@ -100,7 +100,15 @@ def getVariantsFromSeqs(ref_seq: str, allele_seq: str, ref_name: str) -> list[Va
 
         # merge pre_v and now_v
         if pre_v and now_v and pre_v.typ == now_v.typ and pre_v.typ != "single":
-            pre_v.val += now_v.val
+            if pre_v.typ == "deletion":
+                assert isinstance(pre_v.val, int)
+                assert isinstance(now_v.val, int)
+                pre_v.val += now_v.val
+            else:
+                assert pre_v.typ == "insertion"
+                assert isinstance(pre_v.val, str)
+                assert isinstance(now_v.val, str)
+                pre_v.val += now_v.val
         # cannont merge -> previous variant done
         elif pre_v:
             variants.append(pre_v)

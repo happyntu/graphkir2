@@ -33,8 +33,8 @@ class GraphKir(KirPipe):
             f""" \
             graphkir \
                 --thread {self.getThreads()} \
-                --r1 example/test00.read1.fq.gz \
-                --r2 example/test00.read2.fq.gz \
+                --r1 examples/test00.read1.fq.gz \
+                --r2 examples/test00.read2.fq.gz \
                 --index-folder {folder} \
                 --output-folder {folder}/tmp \
                 --output-cohort-name {folder}/tmp/example_data.cohort \

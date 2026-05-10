@@ -236,15 +236,21 @@ def groupReadToBam(
 
 def queryPileup(bamfile: AlignmentFile, ref: str, pos: int) -> dict[str, str]:
     """Query the base on the specific position"""
-    base = {}
+    base: dict[str, str] = {}
     for pileupcolumn in bamfile.pileup(ref, pos, pos + 1):
         if pileupcolumn.pos != pos:  # type: ignore
             continue
         for pileupread in pileupcolumn.pileups:  # type: ignore
-            if not pileupread.is_del and not pileupread.is_refskip:
-                base[
-                    pileupread.alignment.query_name
-                ] = pileupread.alignment.query_sequence[pileupread.query_position]
+            if pileupread.is_del or pileupread.is_refskip:
+                continue
+            query_sequence = pileupread.alignment.query_sequence
+            query_position = pileupread.query_position
+            if query_sequence is None or query_position is None:
+                continue
+            query_name = pileupread.alignment.query_name
+            if query_name is None:
+                continue
+            base[query_name] = query_sequence[query_position]
     # for i, j in base.items():
     #     print(f"{i:30s} {j}")
     return base
@@ -428,7 +434,7 @@ def discoverNovel(
     if apply:
         pd.DataFrame([{
             "name": output_name,
-            "alleles": "_".join(i.id for i in allele_called_seqs),
+            "alleles": "_".join(str(i.id) for i in allele_called_seqs),
         }]).to_csv(output_name + ".tsv", sep="\t", index=False)
         SeqIO.write(allele_called_seqs, output_name + ".fa", "fasta")
         groupReadToBam(bam_name + ".bam", output_name + ".bam", allele_reads)

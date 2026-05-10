@@ -75,7 +75,7 @@ class KPI(KirPipe):
             df = df.drop(
                 columns=["haplotype", "nomenclature", "Jiang 2012 freq", "structure"]
             )
-            df = df.set_axis(map(lambda i: f"KIR{i}", df.columns), axis=1)
+            df = df.set_axis([f"KIR{i}" for i in df.columns], axis=1)
 
             # cn
             name_id = self.getID(name)

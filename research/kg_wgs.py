@@ -124,7 +124,7 @@ def extractFromWGS(input_name, wgs_type: str = "hs37d5", loose: bool = False):
     elif wgs_type == "hg38":
         if loose:
             main_regions = ("chr19:54000000")
-            other_region = open("research/hs38.decoy").read().replace("\n", " ")
+            other_region = open("data/reference/hs38.decoy").read().replace("\n", " ")
         else:
             main_regions = (
                 "chr19:54720000-54870000 "
