@@ -1,0 +1,193 @@
+===== PAGE 1 =====
+1
+Supplement
+* MSA
+Similar alleles are defined as those that share at least the first
+5 digits. If no such alleles are found, those sharing the first 3
+digits are considered instead. If no similar alleles with at least
+the first 3 digits are identified, the consensus is calculated using
+all full-length alleles within the same gene.
+If it is required to merge two or more MSAs, Graph-
+KIR will split the MSA into blocks of MSAs by introns and
+exons. The MSA blocks correspond to the same intron or
+exon regions are realigned separately by muscle [?] with
+default parameters. Then, the merged MSA is constructed
+by concatenating the realigned blocks in order. Splitting the
+MSA, such as separatingKIR2DL5AandKIR2DL5Bfrom
+KIR2DL5, is a straightforward process. The split MSAs only
+include alleles with the corresponding gene name, and any
+column only contains gap is removed.
+Once MSAs are prepared, the consensus can be calculated
+by selecting the base with maximum frequency in each column
+while ignoring gaps. These consensus sequences are then saved
+in the .fasta format as the graph backbone. The variants, called
+from each star allele against the backbone, are saved in .snp
+and .haplotype files. Note that variants with frequency greater
+than 0.1 will be reserved in the graph index. Graph indexes
+are then built by running ‘hisat-build’ with the backbone and
+variants files mentioned above. The MSA operations previously
+described are from another open-source project developed by
+the same authors of Graph-KIR. The codes are available at
+https://github.com/linnil1/pyHLAMSA.
+* Read mapping
+The effectiveness of Graph-KIR heavily relies on the precision
+of graph read mapping. Improvements in read mapping
+can subsequently enhance the results of both copy number
+estimation and allele typing. To assess the effectiveness of
+read mapping, especially when multiple mapping for a read
+is possible, we utilize metrics including False Discovery Rate
+(FDR), recall, precision, and alignment rate. FDR represents
+the proportion of incorrect mapping positions of all the reads
+including multiple mapping. Recall is the rate of reads that
+have at least one correct mapping position. Precision is 1 -
+FDR. The alignment rate quantifies the proportion of mapped
+reads among all the reads of each gene.
+Various methods were assessed here, including linear
+mapping (BWA-MEM, Bowtie 2) and graph mapping (Graph-
+KIR) with different indexes ( ‘split’, ‘ab’, ‘ab2dl1s1’). This
+evaluation is conducted on the 100 simulated samples. All
+setups with the ‘unique’ option (points in cross) have a
+smaller recall but also a smaller FDR compared to the ‘all’
+option (points in circle) shown in Fig. S2. This phenomenon
+indicates that filtering multiple mapped reads leads to a
+decreased numerator in recall, but it simultaneously decreases
+the number of false positives, resulting in smaller numerator
+and denominator in FDR. Overall, recall rates slightly dropped
+while FDRs significantly decreased.
+In Fig. S2, Bowtie 2 has the highest false discovery rate
+(FDR = 0.81). Among the three different graph indexes, Graph-
+KIR based on ‘split’ (17 graphs) has the highest FDR (FDR
+= 0.20). Index ‘ab’ (16 graphs) merges two similar genes
+KIR2DL5AandKIR2DLBto reduce FDR to 0.12. Index
+‘ab2dl1s1’ further lowers the FDR to 0.09 by mergingKIR2DL1
+andKIR2DS1. These three results show that merging similar
+genes to eliminate sequence redundancy and allele similarity
+between indexes can decrease the FDR of the graph mapper.
+The index ‘ab2dl1s1’ of Graph-KIR is a little less accurate
+than BWA-MEM (‘BWA-MEM’, FDR=0.07). However, the
+unique-filtering version ‘ab2dl1s1, unique’ decreases FDR (0.09
+to 0.008) at the expense of a lower recall rate (0.97 to
+0.89). Applying the same filtering on BWA-MEM (‘BWA-MEM,
+unique’) does not result in an apparent decrease in the FDR
+(0.071 to 0.069).
+To compare the read mapping results of different strategies
+thoroughly, we also take precision and alignment rate at gene-
+level into account, as shown in Fig. S3. In this figure, all
+methods have been filtered using the ‘unique’ option. Each
+method has 17 points, representing 17 KIR genes. The results
+demonstrate that the proposed method, Graph-KIR with the
+‘ab2dl1s1’ index, has significantly higher precision than other
+methods. Although BWA-MEM exhibits higher alignment rate,
+which means preserving more reads, some of the retained reads
+may include noise at downstream allele typing due to the lower
+precision. In conclusion, Graph-KIR outperforms other linear
+mapping methods in terms of precision, FDR, and recall rate.
+Among all the indexes evaluated, ‘ab2dl1s1’ stands out as the
+most suitable one.
+* Sample IDs of the real data
+In total, 44 out of 47 samples have WGS short pair-end
+reads available from NCBI. Here is the list of HPRC samples:
+HG002, HG00438, HG005, HG00621, HG00673, HG00733,
+HG00735, HG00741, HG01071, HG01106, HG01109, HG01175,
+HG01243, HG01258, HG01358, HG01361, HG01891, HG01928,
+HG01952, HG01978, HG02055, HG02080, HG02109, HG02145,
+HG02148, HG02257, HG02572, HG02622, HG02630, HG02717,
+HG02723, HG02818, HG02886, HG03098, HG03453, HG03486,
+HG03492, HG03516, HG03540, HG03579, NA18906, NA19240,
+NA20129, NA21309. The average sequencing depth of each
+sample is shown in Table S1. Analysis was restricted to the
+genomic coordinates chr19:54,720,000–54,860,000 (GRCh38),
+with depth metrics derived using the samtools coverage utility.
+T able S1.Average sequencing depth (Arg. Depth) for each HPRC
+sample used in the study.
+Sample Avg. Depth Sample Avg. Depth
+HG002 45.22 HG02109 61.10
+HG005 36.67 HG02145 34.77
+HG00438 33.09 HG02148 31.23
+HG00621 32.04 HG02257 36.38
+HG00673 31.64 HG02572 34.83
+HG00733 40.75 HG02622 41.60
+HG00735 29.27 HG02630 44.60
+HG00741 24.99 HG02717 41.20
+HG01071 33.51 HG02723 29.53
+HG01106 34.25 HG02818 36.93
+HG01109 34.12 HG02886 37.36
+HG01175 28.92 HG03098 26.47
+HG01243 17.40 HG03453 31.84
+HG01258 32.60 HG03486 33.44
+HG01358 25.68 HG03492 33.11
+HG01361 33.31 HG03516 32.75
+HG01891 33.24 HG03540 32.65
+HG01928 36.09 HG03579 32.17
+HG01952 34.16 NA18906 31.63
+HG01978 35.09 NA19240 28.16
+HG02055 32.41 NA20129 31.15
+HG02080 35.33 NA21309 70.48
+===== PAGE 2 =====
+2 Lin et al.
+Fig. S1.Demonstration of KIR complexity at four levels using one of the simulated samples. These levels comprise the base level, gene level, star-allele
+level, and copy number level, with the copy number level highlighting the count of star alleles within a single KIR gene. The symbol ’-’ stands for a
+position identical to the base ofKIR2DL1*0030230.
+Fig. S2.The effectiveness of various mapping strategies is assessed based on False Discovery Rate (FDR) and Recall of the reads across 100 simulated
+samples. Recall is the ratio of the reads having at least one correct mapping position divided by the total number of reads. Conversely, FDR is the
+percentage of mapping positions that are incorrect. For the methods with the ‘unique’ suffix, multi-mapped reads are disregarded, while ‘all’ indicates
+all the reads are considered. Both BWA-MEM and Bowtie 2 use ‘ab2dl1s1’s backbone as the index.
+===== PAGE 3 =====
+3
+Fig. S3.Precision is plotted against alignment rate for each method at gene level, with 17 points per method. Precision is the proportion of reads that
+are correctly mapped to their originating locations. The alignment rate quantifies the proportion of mapped reads among all the reads of each gene. For
+the methods with the ‘unique’ suffix, multi-mapped reads are disregarded. Both BWA-MEM and Bowtie 2 use ‘ab2dl1s1’s backbone as the index.
+Fig. S4.The CN combinations among the annotated 47 HPRC samples.
+===== PAGE 4 =====
+4 Lin et al.
+T able S2.Performance evaluation at 7-digit resolution under
+varying filter conditions (HPRC dataset). Successive filters were
+applied to remove complex variations; the specific types of excluded
+alleles are listed in the ’Filter’ column. Values in parentheses
+represent the total count of alleles retained for evaluation after each
+filtering step.
+Filter Methods Recall Precision F1-score
+-fusion(alleles=248)
+GraphKIR-hg19 0.7782 0.6146 0.6868
+GraphKIR-hg380.7823 0.6159 0.6892
+PING-wgs-ans NA NA NA
+Geny 0.6048 0.5319 0.5660
+-fusion -#(alleles=237)
+GraphKIR-hg19 0.7890 0.6516 0.7137
+GraphKIR-hg380.7932 0.6528 0.7162
+PING-wgs-ans NA NA NA
+Geny 0.6160 0.5573 0.5852
+-fusion -# -+ -=(alleles=222)
+GraphKIR-hg19 0.8018 0.7841 0.7929
+GraphKIR-hg380.8063 0.7851 0.7956
+PING-wgs-ans NA NA NA
+Geny 0.6081 0.6308 0.6193
+-fusion -# -+ -= -$(alleles=146)
+GraphKIR-hg190.7945 0.8345 0.8140
+GraphKIR-hg380.7945 0.8345 0.8140
+PING-wgs-ans NA NA NA
+Geny 0.6575 0.6906 0.6737
+fusion: a gene having fusion with another gene #: an allele having
+nonsynonymous variant(s) in CDS, segmental deletion or fusion with
+another gene +: a genomic allele matching an IPD-KIR CDS-only
+allele =: an allele having synonymous variant(s) in CDS$: an allele
+having variant(s) in non-CDS NA: not available
+===== PAGE 5 =====
+5
+T able S3.Performance comparison of Graph-KIR and Geny across different sequencing depths and resolutions. For Graph-KIR, the ‘exon-
+only’ mode is adopted for 3-digit and 5-digit allele calling.
+Resolution Depth Samples Alleles
+Graph-KIR Geny
+Recall Precision F1-score Recall Precision F1-score
+3-digit
+>40x 7 153 0.7895 0.7843 0.7869 0.5724 0.8056 0.6693
+30-40x 29 550 0.8364 0.8348 0.8356 0.8527 0.9002 0.8758
+<30x 8 113 0.8288 0.8214 0.8251 0.8559 0.8879 0.8716
+5-digit
+>40x 7 122 0.7686 0.8304 0.7983 0.6364 0.8462 0.7265
+30-40x 29 488 0.7869 0.8496 0.8170 0.8422 0.8708 0.8563
+<30x 8 94 0.7826 0.8000 0.7912 0.9130 0.8660 0.8889
+7-digit
+>40x 7 37 0.7027 0.4643 0.5591 0.3784 0.4000 0.3889
+30-40x 29 179 0.7709 0.6479 0.7041 0.6201 0.5415 0.5781
+<30x 8 28 0.8929 0.5952 0.7143 0.7857 0.5500 0.6471

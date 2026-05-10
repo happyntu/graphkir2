@@ -1,0 +1,313 @@
+===== PAGE 1 =====
+Responses to review comments: 
+ 
+Reviewer: 1 
+Comments to the Author 
+The manuscript by Lin et al. introduces Graph-KIR, a novel graph-based computational tool 
+for KIR gene copy number estimation and high-resolution allele calling from short-read 
+WGS data. The tool's strengths are its innovative per-sample graph-based methodology 
+and strong performance in gene-level identification. However, claims of high-resolution 
+allele calling accuracy are not sufficiently benchmarked against the current state-of-the-art. 
+Furthermore, the evaluation on real-world data relies on filtering that limits claims of 
+practical utility. The work requires major revisions to substantiate its claimed advantages 
+before it can be recommended for publication. 
+ 
+--- MAJOR COMMENTS --- 
+ 
+1. The manuscript requires a direct benchmark against the state-of-the-art Geny tool. 
+ 
+  - I recognize the Graph-KIR preprint was originally posted in 2023, before the publication 
+of Geny (Zhou et al., 2024). However, Geny now represents the benchmark for accuracy, 
+particularly at the functionally significant 3-digit resolution: 
+    * Geny: 90.9% precision, 95.3% recall (40 HPRC samples) 
+    * Graph-KIR: 76.4% accuracy (44 HPRC samples) 
+ 
+  - The Geny authors stated they tried Graph-KIR but "were unable to get satisfactory 
+results". While this claim is weak as the Geny authors did not provide additional evidence, it 
+does need to be taken into account. Due to the published accuracy values of Geny, I cannot 
+support the authors claims of that their tool is more accurate than the competition (eg "the 
+results showcase that Graph-KIR remains superior to the alternative regarding of accuracy 
+at all resolutions while maintaining a low number of false negatives"). Ultimately, the lack of 
+reciprocal benchmarking by either group creates a significant gap in comparative evaluation 
+and needs to be addressed. 
+Response: 
+We thank the reviewer for this essential comment. We acknowledge that Geny (Zhou et al., 
+2024) has established a high standard for KIR typing. In this revision, we have performed a 
+comprehensive, reciprocal benchmark against Geny using both simulated data and the full 
+HPRC dataset. 
+To address the discrepancies noted by the reviewer, we have implemented the 
+following improvements and clarifications: 
+===== PAGE 2 =====
+(1) Standardization of Metrics: We have corrected the terminology in our manuscript. 
+The metric previously labeled as "Accuracy" was, in fact, Recall. We now provide a 
+full suite of metrics—Recall, Precision, and F1-score—for all tools to ensure a 
+transparent comparison. Notably, our analysis of the Geny source code revealed 
+that its internal recall calculation excludes "mis-paired" alleles from the 
+denominator, which can lead to an overestimation of performance. To ensure a 
+rigorous benchmark, we have recalculated Geny’s performance using the standard 
+definitions above for all comparisons in this study. 
+(2) Benchmark on HPRC Data (44 Samples): We conducted the evaluation based on 
+the 44 HPRC samples, larger than the 40 samples used in the Geny publication. 
+The results on the simulated data (Tables 1 and 3) and the real data (Tables 2 and 
+4) demonstrate a nuanced performance landscape: 
+A. Copy Number Estimation: Graph-KIR consistently outperforms existing 
+methods, providing the robust foundation necessary for accurate allele calling. 
+(Table 1 and Table 2) 
+B. 7-digit Resolution: Graph-KIR remains superior to other tools, including 
+Geny, in resolving non-coding variations. (Table 3 and Table 4) 
+C. Functional Typing (3-digit): Graph-KIR achieves higher Recall, whereas 
+Geny demonstrates higher Precision. (Table 3 and Table 4) 
+(3) To address the "unsatisfactory results" mentioned by the Geny authors, we 
+identified that a primary source of confusion was the inclusion of non-coding 
+variants in functional (3-digit) calls. In this revision, we emphasize Graph-KIR’s 
+'exon-only' configuration. This option restricts the variant set to exonic regions, 
+ensuring that our 3-digit calls align strictly with the functional nomenclature used by 
+Geny and other tools. 
+(4) We have tempered our language to reflect these findings. Rather than claiming 
+absolute superiority in every metric, we now specify that Graph-KIR provides the 
+highest resolution (7-digit) accuracy and the most robust copy number estimation 
+currently available, while remaining competitive at functional resolutions. 
+ 
+2. Performance evaluation on HPRC data overstates the tool's practical utility due to the 
+filtering of complex alleles. 
+ 
+  - The authors report their highest accuracy only after filtering out novel alleles, fusion 
+events, or other complex variations. A user analyzing a new sample will not know a priori if 
+such complexities exist. Reporting accuracy on a "cleaned" dataset does not reflect the 
+tool's performance in a true discovery setting. The authors should present results on the 
+complete, unfiltered HPRC dataset and discuss the tool's performance and limitations with 
+===== PAGE 3 =====
+these challenging features, providing specific examples of what happens in these cases. 
+Response: 
+We thank the reviewer for this critical perspective on "discovery setting" performance. We 
+agree that reporting only filtered results does not fully represent the tool's utility in a real-
+world clinical or research context where the underlying genomic complexity is unknown. 
+In the revised manuscript, we have made the following changes: 
+(1) Unfiltered Benchmarking: We now present the performance of Graph-KIR, PING, 
+and Geny on the complete, unfiltered HPRC dataset (44 samples) in Table 4. This 
+provides a baseline for the tool’s performance in a true discovery setting, including 
+all novel alleles and complex fusion events. 
+(2) We have repositioned the "filtered" results as a secondary analysis (Supplementary 
+Table S2). This serves as a diagnostic evaluation to quantify exactly how much 
+specific features, such as gene fusions or novel polymorphisms, impact calling 
+accuracy for each tool. 
+(3) We emphasize that even in the presence of novel variations, Graph-KIR’s graph-
+based alignment maintains higher 7-digit resolution accuracy than alternative 
+methods. We anticipate that this advantage will become increasingly critical as the 
+IPD-KIR database expands to incorporate a broader catalog of novel alleles in the 
+near future. 
+ 
+3. The simulation methodology may not adequately capture the complexity of the KIR locus. 
+ 
+  - The current simulation generates reads directly from KIR allele sequences, excluding 
+inter-gene sequences. This simplifies the read mapping challenge by removing homologous 
+sequences and segmental duplications. The large discrepancy in simulated vs real data 
+accuracy further supports the notion that the simulations are not sufficiently representative 
+(91% vs 77.8%). A more robust validation would simulate reads from the entire ~150kb KIR 
+genomic locus, and swap out alleles from the database within the gene locations. 
+Response: 
+We appreciate the reviewer’s constructive critique regarding our simulation strategy. We 
+acknowledge that simulating reads directly from cDNA or isolated gene sequences can 
+underestimate the challenges posed by the high homology and repetitive nature of the 
+intergenic regions within the ~150kb KIR cluster. Nevertheless, these simulations still 
+demonstrate clear performance differences between the various methods (Tables 1 and 
+Table 3).  
+ To test whether intergenic reads contribute to the discrepancy between simulated 
+(91.79% F1-score) and real-world (68.67% F1-score) performance, we conducted an 
+experiment where we filtered out reads mapping to intergenic regions (based on GRCh38 
+===== PAGE 4 =====
+coordinates) in the 44 HPRC samples. We found that this filtering process had no 
+significant impact on the allele-calling performance (data not shown). This suggest that 
+while intergenic homology is a known challenge for mapping, the performance "gap" is 
+more likely driven by other complex structural variations and novel polymorphisms present 
+in the HPRC assemblies rather than intergenic noise alone.  
+We have now explicitly detailed these "failure modes" in Supplementary Table S2. Both 
+Graph-KIR and Geny are similarly impacted by features such as: gene fusion events, large 
+segmental duplications, or novel alleles. 
+We also considered using the simulation framework proposed by Zhou et al. (Geny). 
+However, we observed that their framework generates and evaluates reads for each 
+haploid assembly separately. In contrast, real-world WGS data is derived from diploid 
+samples, where reads from two different haplotypes must be de-convoluted simultaneously. 
+We believe our simulation, while simplified in terms of intergenic sequence, more accurately 
+captures the diploid de-convolution challenge, which is a primary hurdle in KIR typing. 
+ 
+4. The ground truth evaluation methodology is unclear 
+ 
+   - The authors state that the HPRC ground truth evaluation was taken from Hung et. al. 
+2024 "Genetic complexity of killer-cell immunoglobulin-like receptor genes in human 
+pangenome assemblies" - it is not immediately clear that this is the SKIRT paper. The 
+authors should state clearly whether SKIRT was used, as is available on github, for the 
+ground truth evaluation. 
+   - The methods for HPRC ground truth calling in the Graph-KIR github do not include the 
+`kelvin_kir_v1_0.csv` file that contains the HPRC ground truth allele calls necessary to 
+reproduce the results. I could not find that file in any of the supplemental code, files or 
+zenodo deposits from Hung et. al. The authors should ensure their ground truth 
+methodology is reproducible, either by including all files or directly users how to use SKIRT 
+to reproduce them 
+Response: 
+We thank the reviewer for pointing out the need for greater clarity regarding our ground 
+truth data. We have made the following updates to the manuscript and our public repository 
+to ensure full transparency and reproducibility: 
+1. We have revised the section 2.8 to state clearly that the HPRC ground truth 
+annotations, the Supplemental Table S2 of Hung et al., were generated using 
+SKIRT (Hung et al., 2024).  
+2. We apologize for the missing file in our previous repository. We have now uploaded 
+the comprehensive ground truth file, hprc_summary_v1_2_e.tsv, to the Graph-KIR 
+GitHub repository. This file contains the finalized HPRC ground truth allele calls 
+===== PAGE 5 =====
+utilized in our evaluation, corresponding to Supplementary Table S2 from Hung et 
+al. (2024). Furthermore, we have provided the scripts for calculating Recall, 
+Precision, and F1-score across all resolutions within our GitHub repository. 
+3. We selected SKIRT as our ground truth framework based on its rigorous adherence 
+to IPD-KIR nomenclature and its high performance relative to other tools: 
+A. SKIRT utilizes a sequence-based hierarchical classification. The first three 
+digits are defined by protein sequence identity, digits four and five distinguish 
+synonymous variants within the CDS, and the final two digits characterize 
+non-coding variations. 
+B. In our validation of the 47 HPRC genome assemblies, SKIRT demonstrated: 
+99.7% concordance with Immuannot, while successfully identifying three gene 
+fusion events that Immuannot failed to detect. BAKIR showed significantly 
+lower concordance with both SKIRT (94.2%) and Immuannot (93.9%) and 
+was only evaluated on 26 of the 47 HPRC samples. 
+4. By providing the raw annotation files and clearly defining the hierarchical logic of 
+the SKIRT pipeline, we ensure that our evaluation methodology is both technically 
+sound and fully reproducible by the community. 
+ 
+--- MINOR COMMENTS --- 
+ 
+5. The github README states the current version is tagged with "v2.0" however this tag 
+does not exist in the repo. 
+Response: 
+We have officially tagged the current stable release as v2.0 within the repository. This 
+allows users to easily clone or download specific stable versions using standard Git 
+commands. 
+  
+===== PAGE 6 =====
+Responses to review comments: 
+ 
+Reviewer: 2 
+Comments to the Author 
+The manuscript introduces Graph-KIR, a graph-based method for KIR copy number 
+estimation and allele typing from short-read sequencing data. The KIR locus is one of the 
+most challenging regions of the human genome due to its high polymorphism, structural 
+variation, and paralogous gene families, and the development of tools tailored to this 
+complexity is both timely and important. The paper is generally well-written and provides a 
+clear description of the pipeline, as well as comparisons to existing approaches. However, I 
+have some concerns outlined below: 
+ 
+Major: 
+- Merging highly similar genes (KIR2DL1/2DS1, KIR2DL5A/5B) reduces false discovery but 
+risks masking biologically relevant distinctions. 
+Response: 
+By utilizing a merged MSA for paralogous pairs like KIR2DL5A/B, we allow the graph-based 
+model to evaluate all potential variations across both loci simultaneously. This prevents the 
+loss of reads that might otherwise be discarded due to mapping ambiguity between nearly 
+identical references. 
+ Following the alignment phase, Graph-KIR performs allele calling for each gene 
+independently. The tool utilizes locus-specific diagnostic variations within the graph to 
+distinguish between the genes. Consequently, the final output clearly reports separate allele 
+types for KIR2DL5A and KIR2DL5B (or KIR2DL1 and KIR2DS1). 
+ This approach ensures that we reduce false negatives caused by mapping interference 
+while fully preserving the biologically relevant distinctions between separate loci. 
+ 
+- The model assumes uniform sequencing depth and discards multi-mapped reads, which 
+could bias CN estimates in low-complexity regions.   
+Response: 
+We thank the reviewer for this technical critique. We would like to clarify our strategy for 
+handling read depth and multi-mapping: 
+(1) We intentionally discard multi-mapped reads because their inclusion often leads to 
+a significant over-estimation of local depth, introducing unpredictable noise that 
+biases copy number (CN) estimation. By focusing on uniquely assigned reads 
+within the graph, we ensure a more reliable baseline. 
+(2) We acknowledge that removing these reads may lead to a slight under-estimation 
+of depth for certain high-homology genes. To address this, Graph-KIR does not rely 
+===== PAGE 7 =====
+on a fixed depth value. Instead, we model the depth variation using a normal 
+distribution based on estimated mean and standard deviation. This distribution-
+based approach provides the necessary tolerance for potential under-estimation, 
+allowing for robust CN calling. 
+(3) Our results across diverse datasets confirm that this statistical tolerance effectively 
+compensates for the removal of multi-mapped reads, as evidenced by our high 
+accuracy in CN estimation compared to ground truth. 
+ 
+- The authors use hg19 (hs37d5) instead of hg38, citing complications with hg38 scaffolds. 
+This choice is outdated and may limit adoption in future studies... Most recent studies and 
+reference resources have moved to hg38 or T2T-CHM13; reliance on hg19 may hinder 
+reproducibility and comparability. 
+Response: 
+We thank the reviewer for this important observation regarding the reference genome 
+version. We acknowledge that hg38 and T2T-CHM13 are the current standards for most 
+genomic analyses. Our initial use of hg19 (hs37d5) was a deliberate choice due to the 
+extreme complexity of the KIR region; hg38 contains numerous KIR-related alternative 
+scaffolds that require cautious handling to avoid multi-mapping artifacts and biased read 
+depth. 
+However, we would like to clarify that Graph-KIR is fully compatible with hg38. To 
+address the reviewer’s concern, we performed additional testing using a scaffold-free 
+version of hg38 as the reference for retrieving KIR-related reads. Our results demonstrate: 
+(a) The performance of Graph-KIR when using hg38 is consistent with the results 
+obtained using hg19. This indicates that the underlying graph-based approach is 
+robust to the reference version used for initial read recruitment. 
+(b) The users of Graph-KIR can speficy the reference version (hg19 or hg38) used. 
+Graph-KIR then adjusts its retrieval coordinates accordingly. 
+We have added a note in the section 2.3 of the revised manuscript to explicitly state 
+that both hg19 and hg38 are supported and yield comparable performance. 
+ 
+- Simulated data are fixed at 30x, but real samples vary. A systematic downsampling 
+experiment (e.g., 5x–30x) would be important to establish the tool’s performance at varying 
+depths. 
+Response: 
+We thank the reviewer for highlighting the importance of depth-dependency analysis. While 
+systematic downsampling of simulated data can provide a theoretical baseline, we believe 
+that evaluating performance across real-world sequencing depth variation provides a more 
+rigorous and clinically relevant assessment of the tool's robustness. 
+===== PAGE 8 =====
+To address this, we utilized the inherent depth variability in the 44 HPRC samples, 
+which ranges from 17x to 70x (as detailed in Supplementary Table S1). We categorized 
+these samples into three cohorts (<30x, 30–40x, and >40x) to evaluate performance across 
+functional and genomic resolutions: 
+Our results in Supplementary Table S3 indicate that a reduction in sequencing depth to 
+below 30x does not significantly compromise calling accuracy. This suggests that Graph-
+KIR’s graph-based recruitment is highly efficient even with limited data. 
+Interestingly, we observed slightly lower performance in the highest-depth group 
+(>40x). Our investigation revealed that this group consists primarily of early-released HPRC 
+samples. These samples might be characterized by lower base-calling quality. Similar trend 
+is observed on the results of Geny. Therefore, we consider that sequence quality, rather 
+than depth, is the primary driver of performance variance in these cases. 
+ 
+Minor: 
+- Although Graph-KIR improves short-read analysis of KIR, short reads are inherently 
+limited in resolving paralogous genes and complex haplotypes compared to long-read or 
+graph-based approaches. The authors should briefly acknowledge this limitation in the 
+discussion. 
+Response: 
+We agree that short-read sequencing has physical limitations in resolving the most complex 
+KIR structural variations. We have added a concise acknowledgment of this in the 
+Discussion section, noting that while long-reads offer superior phasing, Graph-KIR remains 
+a critical tool for high-resolution analysis of existing large-scale short-read datasets. 
+ 
+- The sentence “When evaluated with both simulated and real data, the superior 
+performance of Graph-KIR over other existing KIR tools” is incomplete and should be 
+revised for grammatical clarity. 
+Response: 
+Thank you for the correction. We fixed the sentence in the revised manuscript. 
+Furthermore, we have updated the manuscript to further emphasize the primary 
+advantages of Graph-KIR. Specifically, we highlight its superior performance in copy 
+number estimation and 7-digit allele calling. While many existing tools are optimized for 3-
+digit functional typing, Graph-KIR’s graph-based approach allows for a more granular 
+characterization of the KIR region, providing high-accuracy results at the full genomic 
+sequence level (7-digit) and robust copy number profiles across both simulated and real 
+datasets. 
+ 
+- “full-resolution (7-digit)” in the abstract could confuse readers unfamiliar with KIR/HLA 
+===== PAGE 9 =====
+nomenclature. A short clarifier would help. 
+Response: 
+We appreciate the reviewer’s suggestion to clarify the nomenclature for a broader 
+audience. We recognize that while "7-digit" is a standard term within the KIR and HLA 
+communities, it may be ambiguous to readers in other fields. In the revised abstract, we 
+have added a clarifier to explain that 7-digit resolution refers to the genomic sequence level, 
+which includes both coding (exonic) and non-coding (intronic/UTR) variations. 
+Revised Text (Abstract): 
+"In this study, we introduce Graph-KIR, a tool designed to estimate gene copy numbers and 
+predict full-resolution (7-digit, encompassing both coding and non-coding sequence 
+variations) KIR alleles from a whole-genome sequencing (WGS) sample." 
