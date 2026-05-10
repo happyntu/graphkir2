@@ -134,3 +134,38 @@ Decision:
 Do not promote the ratio gate as a final default yet. Keep it as the current
 targeted experimental candidate and add a second criterion that avoids changing
 cases where discard already makes the correct `KIR2DS3` functional call.
+
+## Second-Gate Fallback Ablation
+
+The remaining `synthetic-difficult5x12` `KIR2DS3` errors after ratio `0.80`
+are:
+
+* sample `01`: discard correct, conditional still keeps `KIR2DS3*00201`
+* sample `03`: discard also wrong, so this is not solved by fallback
+* sample `11`: discard correct, conditional rescue introduces
+  `KIR2DS3*00103`
+
+Tested a second gate that falls back to discard-style `KIR2DS3` evidence only
+when the first ratio gate already fired and one of these residual-risk patterns
+is present:
+
+* conditional call still contains `KIR2DS3*00201`
+* conditional rescue introduces `KIR2DS3*00103` when the base likelihood call
+  did not have `00103`, and the cross-support ratio is `< 0.90`
+
+Results:
+
+| panel | 3-digit | 5-digit | 7-digit | fallback samples |
+|---|---:|---:|---:|---|
+| synthetic-difficult5 | 1.0000 | 1.0000 | 1.0000 | `01` |
+| synthetic-difficult5x12 | 0.9750 | 0.9750 | 0.9500 | `01,08,11` |
+| synthetic-functional8 | 1.0000 | 1.0000 | 0.9063 | none |
+| synthetic-functional8x6 | 0.9896 | 0.9896 | 0.9063 | none |
+
+Interpretation:
+
+* this is the best current synthetic result for the difficult panels
+* it beats the discard baseline on `synthetic-difficult5x12`
+* it does not regress the existing functional panels tested here
+* it is still an ablation, not a default, because the fallback requires
+  discard-style evidence in addition to the likelihood/conditional pass

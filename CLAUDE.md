@@ -247,6 +247,18 @@ improves `synthetic-difficult5x12` to `0.9583 / 0.9583 / 0.9333`, but still does
 not recover discard's `KIR2DS3` robustness. Treat this as the current targeted
 experimental candidate, not as the final default.
 
+A second-gate ablation that falls back to discard-style `KIR2DS3` evidence for
+residual `KIR2DS3*00201` or low-ratio introduced-`00103` cases improves
+`synthetic-difficult5x12` to `0.975 / 0.975 / 0.950` while keeping:
+
+* `synthetic-difficult5`: `1.0 / 1.0 / 1.0`
+* `synthetic-functional8`: `1.0 / 1.0 / 0.90625`
+* `synthetic-functional8x6`: `0.9896 / 0.9896 / 0.90625`
+
+Do not promote the second gate as a default until the discard-style fallback
+evidence is formalized as a reproducible graphkir2 stage rather than an external
+prediction-table ablation.
+
 ## Synthetic-First Workflow
 
 For `graphkir2`, prefer a synthetic-first benchmark and tuning loop:
