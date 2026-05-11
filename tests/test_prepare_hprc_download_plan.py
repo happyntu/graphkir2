@@ -44,7 +44,7 @@ def test_build_download_rows_uses_prepare_hprc_compatible_names(
     assert row.read1 == tmp_path / "fastq" / "SRR14724532_1.fastq.gz"
     assert row.read2 == tmp_path / "fastq" / "SRR14724532_2.fastq.gz"
     assert row.sra_path == tmp_path / "sra" / "SRR14724532" / "SRR14724532.sra"
-    assert "prefetch SRR14724532 --max-size 100G" in row.download_command
+    assert "prefetch SRR14724532 --check-rs no --max-size 100G" in row.download_command
     assert "fasterq-dump" in row.download_command
     assert "--threads 6" in row.download_command
     assert "SRR14724532_1.fastq.gz" in row.download_command
@@ -86,4 +86,4 @@ def test_build_download_rows_allows_prefetch_max_size_override(
         prefetch_max_size="40G",
     )
 
-    assert "prefetch SRR14724532 --max-size 40G" in rows[0].download_command
+    assert "prefetch SRR14724532 --check-rs no --max-size 40G" in rows[0].download_command

@@ -68,6 +68,7 @@ def build_download_command(
         f"mkdir -p {shlex.quote(str(read1.parent))} {shlex.quote(str(sample_tmp))}",
         (
             f"prefetch {shlex.quote(accession)} "
+            "--check-rs no "
             f"--max-size {shlex.quote(prefetch_max_size)} "
             f"--output-directory {shlex.quote(str(cache_root))}"
         ),
@@ -220,7 +221,9 @@ def build_parser() -> argparse.ArgumentParser:
         default="100G",
         help=(
             "SRA Toolkit prefetch --max-size value. The default exceeds the "
-            "20G prefetch default because some HPRC accessions are about 30G."
+            "20G prefetch default because some HPRC accessions are about 30G. "
+            "Generated commands also use --check-rs no to avoid refseq "
+            "dependency resolution delays after SRA download verification."
         ),
     )
     return parser

@@ -116,7 +116,9 @@ validation.
 When HPRC FASTQs are missing, use
 `benchmarks/scripts/prepare_hprc_download_plan.py` to generate accession-level
 target FASTQ paths and SRA Toolkit commands for manual review. It must remain a
-planning helper only and must not start large downloads by default.
+planning helper only and must not start large downloads by default. Generated
+`prefetch` commands use `--check-rs no` to avoid reference-sequence dependency
+resolution stalls after SRA verification.
 
 ## Metrics
 

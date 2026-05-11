@@ -560,8 +560,9 @@ If HPRC FASTQs are missing, use
 `benchmarks/scripts/prepare_hprc_download_plan.py` to generate a manual
 SRA Toolkit download plan and script. The helper intentionally does not download
 large FASTQs; review disk and runtime budget before running its generated shell
-commands. Its generated `prefetch` commands set `--max-size 100G` because some
-HPRC accessions are larger than the SRA Toolkit 20G default.
+commands. Its generated `prefetch` commands set `--check-rs no` to avoid
+reference-sequence dependency stalls after SRA verification and `--max-size
+100G` because some HPRC accessions are larger than the SRA Toolkit 20G default.
 
 ## Synthetic-First Workflow
 
