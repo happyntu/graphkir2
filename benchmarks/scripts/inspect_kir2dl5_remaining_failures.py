@@ -10,7 +10,6 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Sequence
 
-
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
@@ -22,7 +21,6 @@ from inspect_remaining_functional_errors import (  # noqa: E402
     load_panel_calls,
     read_sweep_summary,
 )
-
 
 KIR2DL5_GENES = ("KIR2DL5A", "KIR2DL5B")
 KIR2DL5_BACKBONE = "KIR2DL5*BACKBONE"
@@ -45,7 +43,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--candidate-method",
-        default="enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_geneaware",
+        default="enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_kir2dl1suballele_geneaware",
         help="Candidate method to audit.",
     )
     parser.add_argument(
@@ -73,7 +71,9 @@ def allele_text(alleles: Sequence[str]) -> str:
 
 def typing_backbone_alias(gene_or_backbone: str) -> str:
     """Return the merged typing backbone for KIR2DL5A/B."""
-    if gene_or_backbone.startswith("KIR2DL5A") or gene_or_backbone.startswith("KIR2DL5B"):
+    if gene_or_backbone.startswith("KIR2DL5A") or gene_or_backbone.startswith(
+        "KIR2DL5B"
+    ):
         return KIR2DL5_BACKBONE
     return gene_or_backbone
 
@@ -103,7 +103,9 @@ def gene_copy_counts(
 def gene_copy_text(counts: Counter[str]) -> str:
     """Render KIR2DL5A/B/merged copy counts."""
     merged = sum(counts[gene] for gene in KIR2DL5_GENES)
-    return f"KIR2DL5A={counts['KIR2DL5A']};KIR2DL5B={counts['KIR2DL5B']};merged={merged}"
+    return (
+        f"KIR2DL5A={counts['KIR2DL5A']};KIR2DL5B={counts['KIR2DL5B']};merged={merged}"
+    )
 
 
 def classify_kir2dl5_cause(
@@ -206,7 +208,9 @@ def support_score_text(
         return ""
     from graphkir2.typing.private_support import private_support_score  # type: ignore[import-not-found]
 
-    return format_float(private_support_score(list(alleles), allele_variants, positive, negative))
+    return format_float(
+        private_support_score(list(alleles), allele_variants, positive, negative)
+    )
 
 
 def rank_evidence(
@@ -300,11 +304,7 @@ def rank_evidence(
     candidate_rank, _, candidate_gap = find_candidate_rank(result, candidate)
     positive, negative = collect_variant_support(model.reads)
     allele_variants = {
-        allele: {
-            str(variant.id)
-            for variant in variants
-            if allele in variant.allele
-        }
+        allele: {str(variant.id) for variant in variants if allele in variant.allele}
         for allele in model.allele_to_id
     }
     return {
@@ -314,9 +314,13 @@ def rank_evidence(
         "candidate_rank": candidate_rank,
         "truth_value_gap": truth_gap,
         "candidate_value_gap": candidate_gap,
-        "selected_support": support_score_text(selected, allele_variants, positive, negative),
+        "selected_support": support_score_text(
+            selected, allele_variants, positive, negative
+        ),
         "truth_support": support_score_text(truth, allele_variants, positive, negative),
-        "candidate_support": support_score_text(candidate, allele_variants, positive, negative),
+        "candidate_support": support_score_text(
+            candidate, allele_variants, positive, negative
+        ),
         "reads_after_filter": str(model.getReadsNum()),
         "fail_reason": "",
     }
@@ -324,7 +328,9 @@ def rank_evidence(
 
 def config_path_for_label(label: str) -> Path:
     """Return the benchmark config whose generated paths should be audited."""
-    enhanced = Path("benchmarks/configs") / f"{label}-conditional-kir2ds3-enhancedgate.json"
+    enhanced = (
+        Path("benchmarks/configs") / f"{label}-conditional-kir2ds3-enhancedgate.json"
+    )
     if enhanced.exists():
         return enhanced
     return Path("benchmarks/configs") / f"{label}.json"
@@ -359,7 +365,9 @@ def load_typing_context(
         if extract_sample_id(sample.sample_id) == sample_id
     )
     manifest = load_sample_manifest(preset.input_csv)
-    cn_hints = {sample.sample_id: sample.copy_number_hint for sample in manifest.samples}
+    cn_hints = {
+        sample.sample_id: sample.copy_number_hint for sample in manifest.samples
+    }
 
     raw_reads_data = loadReadsAndVariantsData(sample_plan.variant_json)
     likelihood_reads_data = likelihoodAmbiguousMapped(deepcopy(raw_reads_data))
@@ -442,7 +450,9 @@ def inspect_kir2dl5_sample(
         "normalized_cn": str(copy_number),
         "current_top_n": str(top_n),
         "raw_reads": str(len(raw_reads)),
-        "raw_informative_reads": str(sum(1 for read in raw_reads if has_read_evidence(read))),
+        "raw_informative_reads": str(
+            sum(1 for read in raw_reads if has_read_evidence(read))
+        ),
         "likelihood_reads": str(len(likelihood_reads)),
         "likelihood_informative_reads": str(
             sum(1 for read in likelihood_reads if has_read_evidence(read))
@@ -458,14 +468,8 @@ def inspect_kir2dl5_sample(
         ),
         "positive_variant_ids": str(positive_variants),
         "negative_variant_ids": str(negative_variants),
-        **{
-            f"likelihood_{key}": value
-            for key, value in likelihood_evidence.items()
-        },
-        **{
-            f"discard_{key}": value
-            for key, value in discard_evidence.items()
-        },
+        **{f"likelihood_{key}": value for key, value in likelihood_evidence.items()},
+        **{f"discard_{key}": value for key, value in discard_evidence.items()},
     }
 
 
@@ -484,10 +488,7 @@ def build_audit_rows(
     if candidate_method not in methods:
         methods = (*methods, candidate_method)
     calls = load_panel_calls(summary_rows, methods)
-    by_label_method = {
-        (row["label"], row["method"]): row
-        for row in summary_rows
-    }
+    by_label_method = {(row["label"], row["method"]): row for row in summary_rows}
     rows_by_sample: dict[tuple[str, str], list[dict[str, str]]] = {}
     for row in remaining_rows:
         rows_by_sample.setdefault(remaining_key(row), []).append(row)
@@ -503,7 +504,9 @@ def build_audit_rows(
             panel.get("likelihood_top5000", {}).get(sample_id, [])
         )
         cause = classify_kir2dl5_cause(truth, candidate, discard, likelihood)
-        evidence = inspect_kir2dl5_sample(label, sample_id, summary_row, truth, candidate)
+        evidence = inspect_kir2dl5_sample(
+            label, sample_id, summary_row, truth, candidate
+        )
         audit_rows.append(
             {
                 "panel": label,
@@ -532,11 +535,15 @@ def build_audit_rows(
 def write_tsv(path: Path, rows: list[dict[str, str]]) -> None:
     """Write audit rows as TSV."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = list(rows[0]) if rows else [
-        "panel",
-        "sample_id",
-        "root_cause",
-    ]
+    fieldnames = (
+        list(rows[0])
+        if rows
+        else [
+            "panel",
+            "sample_id",
+            "root_cause",
+        ]
+    )
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter="\t")
         writer.writeheader()

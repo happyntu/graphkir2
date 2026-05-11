@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
 
-
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
@@ -30,7 +29,6 @@ from inspect_remaining_functional_errors import (  # noqa: E402
     load_panel_calls,
     read_sweep_summary,
 )
-
 
 FIELDNAMES = [
     "panel",
@@ -109,7 +107,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--candidate-method",
-        default="enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_geneaware",
+        default="enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_kir2dl1suballele_geneaware",
         help="Candidate method to inspect.",
     )
     parser.add_argument(
@@ -194,7 +192,9 @@ def discriminating_variant_ids(
     return truth_ids - candidate_ids, candidate_ids - truth_ids
 
 
-def compute_variant_evidence(variant_id: str, reads: Sequence[object]) -> VariantEvidence:
+def compute_variant_evidence(
+    variant_id: str, reads: Sequence[object]
+) -> VariantEvidence:
     """Compute weighted positive/negative support for one variant."""
     positive_weight = 0.0
     negative_weight = 0.0
@@ -230,7 +230,10 @@ def support_class(evidence: VariantEvidence) -> str:
     """Classify one variant using the private-support score thresholds."""
     if evidence.positive_weight == 0.0 and evidence.negative_weight == 0.0:
         return "unobserved"
-    if evidence.positive_weight >= 2.0 and evidence.positive_weight >= evidence.negative_weight:
+    if (
+        evidence.positive_weight >= 2.0
+        and evidence.positive_weight >= evidence.negative_weight
+    ):
         return "supported"
     if evidence.negative_weight >= 5.0 and evidence.positive_weight == 0.0:
         return "unsupported"
@@ -249,7 +252,11 @@ def support_direction(side: str, evidence: VariantEvidence) -> str:
         return "mixed"
     positive_owner = "truth" if side == "truth_only" else "candidate"
     negative_owner = "candidate" if side == "truth_only" else "truth"
-    return f"supports_{positive_owner}" if evidence.net_weight > 0 else f"supports_{negative_owner}"
+    return (
+        f"supports_{positive_owner}"
+        if evidence.net_weight > 0
+        else f"supports_{negative_owner}"
+    )
 
 
 def carriers_of_interest(variant: object, alleles: Sequence[str]) -> list[str]:
@@ -392,10 +399,11 @@ def summarize_sample_rows(rows: Sequence[dict[str, str]]) -> list[dict[str, str]
         margin = truth_net - candidate_net
         positive_weight = sum(_float(row, "positive_weight") for row in sample_rows)
         ambiguous_positive = sum(
-            _float(row, "ambiguous_positive_weight")
-            for row in sample_rows
+            _float(row, "ambiguous_positive_weight") for row in sample_rows
         )
-        ambiguous_ratio = ambiguous_positive / positive_weight if positive_weight else 0.0
+        ambiguous_ratio = (
+            ambiguous_positive / positive_weight if positive_weight else 0.0
+        )
         if margin > 0.0:
             signal = "variant_signal_favors_truth"
         elif margin < 0.0:

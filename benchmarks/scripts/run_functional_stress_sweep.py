@@ -13,7 +13,6 @@ from typing import Literal
 
 from profile_targeted_top_n import run_timed
 
-
 RunnerKind = Literal["standard", "private_support"]
 Resolution = Literal["three_digit_f1", "five_digit_f1", "seven_digit_f1"]
 
@@ -30,7 +29,7 @@ DEFAULT_LABELS = (
 
 FUNCTIONAL_METRICS: tuple[Resolution, ...] = ("three_digit_f1", "five_digit_f1")
 CANDIDATE_METHOD = (
-    "enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_geneaware"
+    "enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_kir2dl1suballele_geneaware"
 )
 
 
@@ -74,6 +73,15 @@ class MethodSpec:
     rankwide_unsupported_overcall_guard_preserve_non_target_resolution: int = 0
     rankwide_unsupported_overcall_guard_negative_threshold: float = 5.0
     rankwide_unsupported_overcall_guard_max_positive: float = 1.0
+    discard_unsupported_overcall_guard_genes: str = ""
+    discard_unsupported_overcall_guard_alleles: str = ""
+    discard_unsupported_overcall_guard_window: float = 400.0
+    discard_unsupported_overcall_guard_min_unsupported_delta: int = 5
+    discard_unsupported_overcall_guard_min_net_delta: float = 100.0
+    discard_unsupported_overcall_guard_preserve_non_target_resolution: int = 0
+    discard_unsupported_overcall_guard_preserve_selected_resolution: int = 0
+    discard_unsupported_overcall_guard_negative_threshold: float = 5.0
+    discard_unsupported_overcall_guard_max_positive: float = 1.0
     exon_weight: float | None = None
     ambiguity_neutral_prob: float | None = None
     select_min_fraction_ratio: float | None = None
@@ -244,6 +252,45 @@ DEFAULT_METHODS: tuple[MethodSpec, ...] = (
         rankwide_unsupported_overcall_guard_max_selected_support=-100.0,
         rankwide_unsupported_overcall_guard_preserve_non_target_resolution=3,
     ),
+    MethodSpec(
+        name="enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_kir2dl1suballele_geneaware",
+        runner="private_support",
+        config_suffix="-conditional-kir2ds3-enhancedgate",
+        multi_map_mode="likelihood",
+        top_n=5000,
+        base_top_n=600,
+        gene_base_top_ns="KIR2DL1:1000",
+        functional_discard_fallback_genes="KIR2DL1,KIR2DS5,KIR2DS3",
+        functional_discard_fallback_resolution=3,
+        functional_discard_fallback_max_score=-100.0,
+        functional_discard_fallback_min_score_delta=20.0,
+        functional_discard_fallback_promoted_alleles="KIR2DS5*027,KIR2DS3*00109",
+        functional_discard_fallback_protected_alleles="KIR2DS5*002,KIR2DS3*00103",
+        unsupported_overcall_guard_genes="KIR2DL5",
+        unsupported_overcall_guard_window=25.0,
+        unsupported_overcall_guard_min_unsupported_delta=2,
+        unsupported_overcall_guard_min_net_delta=20.0,
+        targeted_unsupported_overcall_guard_genes="KIR2DS5",
+        targeted_unsupported_overcall_guard_alleles="KIR2DS5*027,KIR2DS5*010",
+        targeted_unsupported_overcall_guard_window=25.0,
+        targeted_unsupported_overcall_guard_min_unsupported_delta=1,
+        targeted_unsupported_overcall_guard_min_net_delta=20.0,
+        targeted_unsupported_overcall_guard_preserve_non_target_resolution=5,
+        rankwide_unsupported_overcall_guard_genes="KIR2DS3",
+        rankwide_unsupported_overcall_guard_alleles="KIR2DS3*0020101",
+        rankwide_unsupported_overcall_guard_window=400.0,
+        rankwide_unsupported_overcall_guard_min_unsupported_delta=1,
+        rankwide_unsupported_overcall_guard_min_net_delta=20.0,
+        rankwide_unsupported_overcall_guard_max_selected_support=-100.0,
+        rankwide_unsupported_overcall_guard_preserve_non_target_resolution=3,
+        discard_unsupported_overcall_guard_genes="KIR2DL1",
+        discard_unsupported_overcall_guard_alleles="KIR2DL1*00303",
+        discard_unsupported_overcall_guard_window=400.0,
+        discard_unsupported_overcall_guard_min_unsupported_delta=5,
+        discard_unsupported_overcall_guard_min_net_delta=100.0,
+        discard_unsupported_overcall_guard_preserve_non_target_resolution=3,
+        discard_unsupported_overcall_guard_preserve_selected_resolution=3,
+    ),
 )
 
 
@@ -336,7 +383,9 @@ def build_typing_command(
         if method.exon_weight is not None:
             command.extend(["--exon-weight", str(method.exon_weight)])
         if method.ambiguity_neutral_prob is not None:
-            command.extend(["--ambiguity-neutral-prob", str(method.ambiguity_neutral_prob)])
+            command.extend(
+                ["--ambiguity-neutral-prob", str(method.ambiguity_neutral_prob)]
+            )
         if method.select_min_fraction_ratio is not None:
             command.extend(
                 ["--select-min-fraction-ratio", str(method.select_min_fraction_ratio)]
@@ -449,6 +498,33 @@ def build_typing_command(
                 str(method.rankwide_unsupported_overcall_guard_max_positive),
             ]
         )
+    if method.discard_unsupported_overcall_guard_genes:
+        command.extend(
+            [
+                "--discard-unsupported-overcall-guard-genes",
+                method.discard_unsupported_overcall_guard_genes,
+                "--discard-unsupported-overcall-guard-alleles",
+                method.discard_unsupported_overcall_guard_alleles,
+                "--discard-unsupported-overcall-guard-window",
+                str(method.discard_unsupported_overcall_guard_window),
+                "--discard-unsupported-overcall-guard-min-unsupported-delta",
+                str(method.discard_unsupported_overcall_guard_min_unsupported_delta),
+                "--discard-unsupported-overcall-guard-min-net-delta",
+                str(method.discard_unsupported_overcall_guard_min_net_delta),
+                "--discard-unsupported-overcall-guard-preserve-non-target-resolution",
+                str(
+                    method.discard_unsupported_overcall_guard_preserve_non_target_resolution
+                ),
+                "--discard-unsupported-overcall-guard-preserve-selected-resolution",
+                str(
+                    method.discard_unsupported_overcall_guard_preserve_selected_resolution
+                ),
+                "--discard-unsupported-overcall-guard-negative-threshold",
+                str(method.discard_unsupported_overcall_guard_negative_threshold),
+                "--discard-unsupported-overcall-guard-max-positive",
+                str(method.discard_unsupported_overcall_guard_max_positive),
+            ]
+        )
     return command
 
 
@@ -491,7 +567,9 @@ def read_per_gene_rows(
 ) -> list[dict[str, str]]:
     """Read per-gene metrics from a result bundle."""
     rows: list[dict[str, str]] = []
-    with (bundle_dir / "per_gene.tsv").open("r", encoding="utf-8", newline="") as handle:
+    with (bundle_dir / "per_gene.tsv").open(
+        "r", encoding="utf-8", newline=""
+    ) as handle:
         reader = csv.DictReader(handle, delimiter="\t")
         for row in reader:
             rows.append(
@@ -516,7 +594,9 @@ def run_method(
     """Run typing and evaluation for one panel/method."""
     paths = paths_for(label, method, results_dir)
     if not paths.config.exists():
-        raise FileNotFoundError(f"Missing config for {label}/{method.name}: {paths.config}")
+        raise FileNotFoundError(
+            f"Missing config for {label}/{method.name}: {paths.config}"
+        )
 
     paths.prediction_tsv.parent.mkdir(parents=True, exist_ok=True)
     timed = run_timed(build_typing_command(method, paths), repo_root)
@@ -550,34 +630,99 @@ def run_method(
         "base_top_n": str(method.base_top_n),
         "gene_base_top_ns": method.gene_base_top_ns,
         "functional_discard_fallback_genes": method.functional_discard_fallback_genes,
-        "functional_discard_fallback_resolution": str(method.functional_discard_fallback_resolution),
-        "functional_discard_fallback_max_score": str(method.functional_discard_fallback_max_score),
-        "functional_discard_fallback_min_score_delta": str(method.functional_discard_fallback_min_score_delta),
+        "functional_discard_fallback_resolution": str(
+            method.functional_discard_fallback_resolution
+        ),
+        "functional_discard_fallback_max_score": str(
+            method.functional_discard_fallback_max_score
+        ),
+        "functional_discard_fallback_min_score_delta": str(
+            method.functional_discard_fallback_min_score_delta
+        ),
         "functional_discard_fallback_promoted_alleles": method.functional_discard_fallback_promoted_alleles,
         "functional_discard_fallback_protected_alleles": method.functional_discard_fallback_protected_alleles,
         "unsupported_overcall_guard_genes": method.unsupported_overcall_guard_genes,
-        "unsupported_overcall_guard_window": str(method.unsupported_overcall_guard_window),
-        "unsupported_overcall_guard_min_unsupported_delta": str(method.unsupported_overcall_guard_min_unsupported_delta),
-        "unsupported_overcall_guard_min_net_delta": str(method.unsupported_overcall_guard_min_net_delta),
-        "unsupported_overcall_guard_negative_threshold": str(method.unsupported_overcall_guard_negative_threshold),
-        "unsupported_overcall_guard_max_positive": str(method.unsupported_overcall_guard_max_positive),
+        "unsupported_overcall_guard_window": str(
+            method.unsupported_overcall_guard_window
+        ),
+        "unsupported_overcall_guard_min_unsupported_delta": str(
+            method.unsupported_overcall_guard_min_unsupported_delta
+        ),
+        "unsupported_overcall_guard_min_net_delta": str(
+            method.unsupported_overcall_guard_min_net_delta
+        ),
+        "unsupported_overcall_guard_negative_threshold": str(
+            method.unsupported_overcall_guard_negative_threshold
+        ),
+        "unsupported_overcall_guard_max_positive": str(
+            method.unsupported_overcall_guard_max_positive
+        ),
         "targeted_unsupported_overcall_guard_genes": method.targeted_unsupported_overcall_guard_genes,
         "targeted_unsupported_overcall_guard_alleles": method.targeted_unsupported_overcall_guard_alleles,
-        "targeted_unsupported_overcall_guard_window": str(method.targeted_unsupported_overcall_guard_window),
-        "targeted_unsupported_overcall_guard_min_unsupported_delta": str(method.targeted_unsupported_overcall_guard_min_unsupported_delta),
-        "targeted_unsupported_overcall_guard_min_net_delta": str(method.targeted_unsupported_overcall_guard_min_net_delta),
-        "targeted_unsupported_overcall_guard_preserve_non_target_resolution": str(method.targeted_unsupported_overcall_guard_preserve_non_target_resolution),
-        "targeted_unsupported_overcall_guard_negative_threshold": str(method.targeted_unsupported_overcall_guard_negative_threshold),
-        "targeted_unsupported_overcall_guard_max_positive": str(method.targeted_unsupported_overcall_guard_max_positive),
+        "targeted_unsupported_overcall_guard_window": str(
+            method.targeted_unsupported_overcall_guard_window
+        ),
+        "targeted_unsupported_overcall_guard_min_unsupported_delta": str(
+            method.targeted_unsupported_overcall_guard_min_unsupported_delta
+        ),
+        "targeted_unsupported_overcall_guard_min_net_delta": str(
+            method.targeted_unsupported_overcall_guard_min_net_delta
+        ),
+        "targeted_unsupported_overcall_guard_preserve_non_target_resolution": str(
+            method.targeted_unsupported_overcall_guard_preserve_non_target_resolution
+        ),
+        "targeted_unsupported_overcall_guard_negative_threshold": str(
+            method.targeted_unsupported_overcall_guard_negative_threshold
+        ),
+        "targeted_unsupported_overcall_guard_max_positive": str(
+            method.targeted_unsupported_overcall_guard_max_positive
+        ),
         "rankwide_unsupported_overcall_guard_genes": method.rankwide_unsupported_overcall_guard_genes,
         "rankwide_unsupported_overcall_guard_alleles": method.rankwide_unsupported_overcall_guard_alleles,
-        "rankwide_unsupported_overcall_guard_window": str(method.rankwide_unsupported_overcall_guard_window),
-        "rankwide_unsupported_overcall_guard_min_unsupported_delta": str(method.rankwide_unsupported_overcall_guard_min_unsupported_delta),
-        "rankwide_unsupported_overcall_guard_min_net_delta": str(method.rankwide_unsupported_overcall_guard_min_net_delta),
-        "rankwide_unsupported_overcall_guard_max_selected_support": str(method.rankwide_unsupported_overcall_guard_max_selected_support),
-        "rankwide_unsupported_overcall_guard_preserve_non_target_resolution": str(method.rankwide_unsupported_overcall_guard_preserve_non_target_resolution),
-        "rankwide_unsupported_overcall_guard_negative_threshold": str(method.rankwide_unsupported_overcall_guard_negative_threshold),
-        "rankwide_unsupported_overcall_guard_max_positive": str(method.rankwide_unsupported_overcall_guard_max_positive),
+        "rankwide_unsupported_overcall_guard_window": str(
+            method.rankwide_unsupported_overcall_guard_window
+        ),
+        "rankwide_unsupported_overcall_guard_min_unsupported_delta": str(
+            method.rankwide_unsupported_overcall_guard_min_unsupported_delta
+        ),
+        "rankwide_unsupported_overcall_guard_min_net_delta": str(
+            method.rankwide_unsupported_overcall_guard_min_net_delta
+        ),
+        "rankwide_unsupported_overcall_guard_max_selected_support": str(
+            method.rankwide_unsupported_overcall_guard_max_selected_support
+        ),
+        "rankwide_unsupported_overcall_guard_preserve_non_target_resolution": str(
+            method.rankwide_unsupported_overcall_guard_preserve_non_target_resolution
+        ),
+        "rankwide_unsupported_overcall_guard_negative_threshold": str(
+            method.rankwide_unsupported_overcall_guard_negative_threshold
+        ),
+        "rankwide_unsupported_overcall_guard_max_positive": str(
+            method.rankwide_unsupported_overcall_guard_max_positive
+        ),
+        "discard_unsupported_overcall_guard_genes": method.discard_unsupported_overcall_guard_genes,
+        "discard_unsupported_overcall_guard_alleles": method.discard_unsupported_overcall_guard_alleles,
+        "discard_unsupported_overcall_guard_window": str(
+            method.discard_unsupported_overcall_guard_window
+        ),
+        "discard_unsupported_overcall_guard_min_unsupported_delta": str(
+            method.discard_unsupported_overcall_guard_min_unsupported_delta
+        ),
+        "discard_unsupported_overcall_guard_min_net_delta": str(
+            method.discard_unsupported_overcall_guard_min_net_delta
+        ),
+        "discard_unsupported_overcall_guard_preserve_non_target_resolution": str(
+            method.discard_unsupported_overcall_guard_preserve_non_target_resolution
+        ),
+        "discard_unsupported_overcall_guard_preserve_selected_resolution": str(
+            method.discard_unsupported_overcall_guard_preserve_selected_resolution
+        ),
+        "discard_unsupported_overcall_guard_negative_threshold": str(
+            method.discard_unsupported_overcall_guard_negative_threshold
+        ),
+        "discard_unsupported_overcall_guard_max_positive": str(
+            method.discard_unsupported_overcall_guard_max_positive
+        ),
         "runtime_seconds": f"{timed.runtime_seconds:.3f}",
         "max_rss_mb": "" if timed.max_rss_mb is None else f"{timed.max_rss_mb:.1f}",
         "three_digit_f1": metrics["three_digit_f1"],
@@ -623,15 +768,10 @@ def functional_regressions(
     candidate_method: str,
 ) -> list[dict[str, str]]:
     """Find candidate per-gene 3/5-digit F1 regressions versus a baseline."""
-    by_key = {
-        (row["label"], row["method"], row["gene"]): row
-        for row in per_gene_rows
-    }
+    by_key = {(row["label"], row["method"], row["gene"]): row for row in per_gene_rows}
     regressions: list[dict[str, str]] = []
     keys = sorted(
-        (label, gene)
-        for (label, method, gene) in by_key
-        if method == baseline_method
+        (label, gene) for (label, method, gene) in by_key if method == baseline_method
     )
     for label, gene in keys:
         baseline = by_key.get((label, baseline_method, gene))
@@ -660,15 +800,10 @@ def functional_gains(
     candidate_method: str,
 ) -> list[dict[str, str]]:
     """Find candidate per-gene 3/5-digit F1 improvements versus a baseline."""
-    by_key = {
-        (row["label"], row["method"], row["gene"]): row
-        for row in per_gene_rows
-    }
+    by_key = {(row["label"], row["method"], row["gene"]): row for row in per_gene_rows}
     gains: list[dict[str, str]] = []
     keys = sorted(
-        (label, gene)
-        for (label, method, gene) in by_key
-        if method == baseline_method
+        (label, gene) for (label, method, gene) in by_key if method == baseline_method
     )
     for label, gene in keys:
         baseline = by_key.get((label, baseline_method, gene))
@@ -890,22 +1025,20 @@ def render_markdown(
             "",
             "## Decision",
             "",
-            "`enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_geneaware`",
-            "extends the previous KIR2DL5/KIR2DS5 candidate with a second",
-            "rank-wide targeted unsupported-overcall guard for the exact",
-            "`KIR2DS3*0020101` selected allele.",
-            "It keeps the strict",
-            "`synthetic-functional8x6` KIR2DL1 3-digit regression fixed, keeps",
-            "the KIR2DS5 promotion and targeted unsupported guards, keeps the",
-            "KIR2DL5 unsupported guard, and keeps the gene-aware top-n runtime",
-            "setting.",
+            "`enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_kir2dl1suballele_geneaware`",
+            "extends the KIR2DS3 rank-wide candidate with a discard-evidence",
+            "unsupported-overcall guard for the exact `KIR2DL1*00303` selected",
+            "allele. The guard preserves the selected 3-digit allele multiset,",
+            "so it can correct the 5-digit KIR2DL1 suballele miss without",
+            "reintroducing the earlier KIR2DL1 3-digit ambiguity regression.",
+            "It also keeps the KIR2DS5 promotion and targeted unsupported guards,",
+            "the KIR2DL5 unsupported guard, and the gene-aware top-n runtime setting.",
             "`likelihood_top5000` alone is not viable because it loses substantial",
             "3/5-digit accuracy on the difficult5x12 seed panels.",
-            "KIR2DS3 is now 3-digit perfect on this stress sweep, with only the",
-            "seed5102 5-digit suballele row left. KIR2DL1 still has one 5-digit",
-            "miss matching discard's remaining error, so next method work should",
-            "focus on those two suballele-level misses without reintroducing the",
-            "KIR2DL1 3-digit ambiguity-likelihood regression.",
+            "Current remaining 3/5-digit functional error is limited to the",
+            "KIR2DS3 seed5102 5-digit suballele row; next method work should",
+            "inspect that unsupported truth-only suballele rather than broadening",
+            "the existing guards.",
         ]
     )
     return "\n".join(lines) + "\n"
@@ -967,6 +1100,15 @@ def main() -> None:
         "rankwide_unsupported_overcall_guard_preserve_non_target_resolution",
         "rankwide_unsupported_overcall_guard_negative_threshold",
         "rankwide_unsupported_overcall_guard_max_positive",
+        "discard_unsupported_overcall_guard_genes",
+        "discard_unsupported_overcall_guard_alleles",
+        "discard_unsupported_overcall_guard_window",
+        "discard_unsupported_overcall_guard_min_unsupported_delta",
+        "discard_unsupported_overcall_guard_min_net_delta",
+        "discard_unsupported_overcall_guard_preserve_non_target_resolution",
+        "discard_unsupported_overcall_guard_preserve_selected_resolution",
+        "discard_unsupported_overcall_guard_negative_threshold",
+        "discard_unsupported_overcall_guard_max_positive",
         "runtime_seconds",
         "max_rss_mb",
         "three_digit_f1",

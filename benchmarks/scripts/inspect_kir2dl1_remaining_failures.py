@@ -9,7 +9,6 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Sequence
 
-
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
@@ -45,7 +44,6 @@ from inspect_remaining_functional_errors import (  # noqa: E402
     read_sweep_summary,
 )
 
-
 KIR2DL1_GENE = "KIR2DL1"
 KIR2DL1_BACKBONE = "KIR2DL1*BACKBONE"
 VARIANT_FIELDNAMES_WITH_MODE = ["evidence_mode", *VARIANT_FIELDNAMES]
@@ -68,7 +66,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--candidate-method",
-        default="enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_geneaware",
+        default="enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_kir2dl1suballele_geneaware",
         help="Candidate method to audit.",
     )
     parser.add_argument(
@@ -176,7 +174,9 @@ def build_variant_rows_from_context(
         ("truth_only", truth_only),
         ("candidate_only", candidate_only),
     ):
-        for variant_id in sorted(variant_ids, key=lambda key: _variant_sort_key(variant_map[key])):
+        for variant_id in sorted(
+            variant_ids, key=lambda key: _variant_sort_key(variant_map[key])
+        ):
             variant = variant_map[variant_id]
             evidence = compute_variant_evidence(variant_id, reads)
             truth_carriers = carriers_of_interest(variant, truth)
@@ -304,7 +304,9 @@ def inspect_kir2dl1_sample(
         "normalized_cn": str(copy_number),
         "current_top_n": str(top_n),
         "raw_reads": str(len(raw_reads)),
-        "raw_informative_reads": str(sum(1 for read in raw_reads if has_read_evidence(read))),
+        "raw_informative_reads": str(
+            sum(1 for read in raw_reads if has_read_evidence(read))
+        ),
         "likelihood_reads": str(len(likelihood_reads)),
         "likelihood_informative_reads": str(
             sum(1 for read in likelihood_reads if has_read_evidence(read))
@@ -349,10 +351,7 @@ def build_audit_outputs(
     if candidate_method not in methods:
         methods = (*methods, candidate_method)
     calls = load_panel_calls(summary_rows, methods)
-    by_label_method = {
-        (row["label"], row["method"]): row
-        for row in summary_rows
-    }
+    by_label_method = {(row["label"], row["method"]): row for row in summary_rows}
     rows_by_sample: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
     for row in remaining_rows:
         rows_by_sample[remaining_key(row)].append(row)
@@ -416,7 +415,9 @@ def write_variant_tsv(path: Path, rows: list[dict[str, str]]) -> None:
         writer.writerows(rows)
 
 
-def render_variant_summary_rows(variant_rows: list[dict[str, str]]) -> list[dict[str, str]]:
+def render_variant_summary_rows(
+    variant_rows: list[dict[str, str]],
+) -> list[dict[str, str]]:
     """Summarize KIR2DL1 discriminating variants by evidence mode."""
     rows: list[dict[str, str]] = []
     for mode in ("likelihood", "discard"):
@@ -437,16 +438,15 @@ def render_markdown(
     """Render the KIR2DL1 audit Markdown report."""
     cause_counts = Counter(row["root_cause"] for row in audit_rows)
     direction_counts = Counter(
-        f"{row['evidence_mode']}:{row['support_direction']}"
-        for row in variant_rows
+        f"{row['evidence_mode']}:{row['support_direction']}" for row in variant_rows
     )
     lines = [
         "# KIR2DL1 Remaining Failure Audit",
         "",
-        "This report audits the remaining KIR2DL1 5-digit suballele miss for",
-        "the current functional-stress lead. It compares likelihood evidence",
-        "against discard evidence because the current candidate is produced by",
-        "the KIR2DL1 functional fallback and matches discard at 5-digit scope.",
+        "This report audits KIR2DL1 functional-stress rows for the current",
+        "lead. When KIR2DL1 rows remain, it compares likelihood evidence against",
+        "discard evidence because the KIR2DL1 rescue path is discard-evidence",
+        "aware and must preserve the 3-digit functional class.",
         "",
         "Command:",
         "",
@@ -579,7 +579,7 @@ def render_markdown(
         lines.extend(
             [
                 "* No KIR2DL1 3-digit or 5-digit remaining errors are present for the current candidate.",
-                "* Keep the KIR2DL1 functional fallback unchanged unless broader stress panels reveal a candidate regression.",
+                "* Keep the KIR2DL1 functional fallback and exact 3-digit suballele guard narrow unless broader stress panels reveal a candidate regression.",
             ]
         )
     else:

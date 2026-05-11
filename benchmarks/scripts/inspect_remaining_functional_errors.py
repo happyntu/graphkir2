@@ -9,7 +9,6 @@ import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
-
 DEFAULT_METHODS = (
     "discard",
     "likelihood_top5000",
@@ -20,6 +19,7 @@ DEFAULT_METHODS = (
     "enhancedgate_kir2dl5guard_geneaware",
     "enhancedgate_kir2dl5_kir2ds5unsupported_geneaware",
     "enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_geneaware",
+    "enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_kir2dl1suballele_geneaware",
 )
 
 
@@ -35,7 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--candidate-method",
-        default="enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_geneaware",
+        default="enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_kir2dl1suballele_geneaware",
         help="Method whose remaining functional errors should be triaged.",
     )
     parser.add_argument(
@@ -100,10 +100,7 @@ def read_allele_rows(path: str) -> dict[str, list[str]]:
             raise ValueError(f"Allele file is missing a header: {path}")
         for row in reader:
             sample_id = (
-                row.get("id")
-                or row.get("sample_id")
-                or row.get("name")
-                or ""
+                row.get("id") or row.get("sample_id") or row.get("name") or ""
             ).strip()
             if not sample_id:
                 continue
@@ -157,10 +154,7 @@ def load_panel_calls(
     """Load truth and selected method predictions for each panel."""
     labels = sorted({row["label"] for row in summary_rows})
     calls: dict[str, dict[str, dict[str, list[str]]]] = {}
-    by_label_method = {
-        (row["label"], row["method"]): row
-        for row in summary_rows
-    }
+    by_label_method = {(row["label"], row["method"]): row for row in summary_rows}
     for label in labels:
         panel: dict[str, dict[str, list[str]]] = {
             "truth": read_allele_rows(truth_path_for_label(label))
@@ -385,13 +379,13 @@ def render_markdown(
             f"* `candidate_regression` is the highest-priority blocker because discard is correct and the candidate is wrong. Current candidate regressions: {regression_text}.",
             "* If candidate regressions are `none`, next work should target shared or unresolved failure patterns rather than adding broader regression guards.",
             f"* Current remaining functional errors are in: {remaining_genes}.",
-            "* The KIR2DL1 3-digit regression is absent here; only a 5-digit suballele miss remains, matching discard behavior.",
+            "* KIR2DL1 is absent from the current 3/5-digit remaining rows; keep the suballele guard narrow unless broader panels reveal a regression.",
             "",
             "## Recommended Next Method Work",
             "",
             "* KIR2DS5 has no remaining 3/5-digit functional rows for the current candidate; keep the targeted KIR2DS5 guard narrow unless broader panels reveal a regression.",
             "* Inspect the remaining KIR2DS3 rows at suballele/private-support level before changing the broader KIR2DS3 rescue gate.",
-            "* Inspect the remaining KIR2DL1 row with the dedicated suballele audit before adding any 5-digit-only guard; KIR2DL1 3-digit is already fixed.",
+            "* Do not broaden the KIR2DL1 suballele guard unless new failures preserve the selected 3-digit genotype multiset.",
             "* Keep any future KIR2DL5A/B work separate from the KIR2DS3/KIR2DS5 gate work.",
         ]
     )
@@ -422,9 +416,7 @@ def main() -> None:
         "candidate_full",
     ]
     method_fields = [
-        field
-        for method in methods
-        for field in (method, f"{method}_full")
+        field for method in methods for field in (method, f"{method}_full")
     ]
     write_tsv(Path(args.output_tsv), rows, [*base_fields, *method_fields])
     output_md = Path(args.output_md)

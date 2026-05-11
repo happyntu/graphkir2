@@ -10,7 +10,7 @@ python benchmarks/scripts/inspect_remaining_functional_errors.py
 ```
 
 Candidate method: `enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_kir2dl1suballele_geneaware`
-Full TSV: `benchmarks/results/functional-stress-sweep/remaining_functional_errors.tsv`
+Full TSV: `benchmarks/results/functional-stress-sweep/kir2dl1suballele_remaining_functional_errors.tsv`
 
 ## Summary
 
@@ -22,7 +22,7 @@ Full TSV: `benchmarks/results/functional-stress-sweep/remaining_functional_error
 
 | panel | sample | gene | res | cause hint | truth | candidate | missing | extra | discard | likelihood | enhancedgate |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| synthetic-difficult5x12-seed5102 | 00 | KIR2DS3 | 5 | all_methods_disagree_or_shifted | KIR2DS3*00103_KIR2DS3*00113 | KIR2DS3*00103_KIR2DS3*00103 | KIR2DS3*00113 | KIR2DS3*00103 | KIR2DS3*00108_KIR2DS3*00113 | KIR2DS3*00103_KIR2DS3*00201 | KIR2DS3*00103_KIR2DS3*00103 |
+| synthetic-difficult5x12-seed5102 | 00 | KIR2DS3 | 5 | all_methods_disagree_or_shifted | KIR2DS3*00103_KIR2DS3*00113 | KIR2DS3*00103_KIR2DS3*00103 | KIR2DS3*00113 | KIR2DS3*00103 |  |  |  |
 
 ## Interpretation
 

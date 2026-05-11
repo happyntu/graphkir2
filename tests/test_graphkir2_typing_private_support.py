@@ -45,7 +45,10 @@ class DummyRead:
 
 class DummyResult:
     value = [100.0, 98.0]
-    allele_name = [["KIR2DS3*0020101", "KIR2DS3*0011201"], ["KIR2DS3*0010301", "KIR2DS3*0011201"]]
+    allele_name = [
+        ["KIR2DS3*0020101", "KIR2DS3*0011201"],
+        ["KIR2DS3*0010301", "KIR2DS3*0011201"],
+    ]
 
     def isFail(self) -> bool:
         return False
@@ -147,6 +150,24 @@ class DummyKIR2DS5PreservedShiftResult:
         return False
 
 
+class DummyKIR2DL1SuballeleResult:
+    n = 2
+    value = [-10.0, -100.0, -120.0]
+    allele_name = [
+        ["KIR2DL1*0030242", "KIR2DL1*00303"],
+        ["KIR2DL1*0030229", "KIR2DL1*025"],
+        ["KIR2DL1*0030229", "KIR2DL1*0030242"],
+    ]
+    fraction = [
+        [0.50, 0.50],
+        [0.50, 0.50],
+        [0.50, 0.50],
+    ]
+
+    def isFail(self) -> bool:
+        return False
+
+
 def test_private_support_neutralizes_configured_cross_gene_group_only() -> None:
     reads = [
         DummyRead("KIR2DS3*BACKBONE", "pair1\tA", "", 0.5, 0.5, [], [], [], []),
@@ -201,11 +222,37 @@ def test_private_support_can_neutralize_only_target_gene_in_cross_gene_group() -
 
 def test_private_support_can_select_lower_likelihood_supported_candidate() -> None:
     reads = [
-        DummyRead("KIR2DS3*BACKBONE", "pair1\tA", "", 1.0, 0.0, ["v_truth"], [], ["v_false"], []),
-        DummyRead("KIR2DS3*BACKBONE", "pair2\tA", "", 1.0, 0.0, ["v_truth"], [], ["v_false"], []),
-        DummyRead("KIR2DS3*BACKBONE", "pair3\tA", "", 1.0, 0.0, [], [], ["v_false"], []),
-        DummyRead("KIR2DS3*BACKBONE", "pair4\tA", "", 1.0, 0.0, [], [], ["v_false"], []),
-        DummyRead("KIR2DS3*BACKBONE", "pair5\tA", "", 1.0, 0.0, [], [], ["v_false"], []),
+        DummyRead(
+            "KIR2DS3*BACKBONE",
+            "pair1\tA",
+            "",
+            1.0,
+            0.0,
+            ["v_truth"],
+            [],
+            ["v_false"],
+            [],
+        ),
+        DummyRead(
+            "KIR2DS3*BACKBONE",
+            "pair2\tA",
+            "",
+            1.0,
+            0.0,
+            ["v_truth"],
+            [],
+            ["v_false"],
+            [],
+        ),
+        DummyRead(
+            "KIR2DS3*BACKBONE", "pair3\tA", "", 1.0, 0.0, [], [], ["v_false"], []
+        ),
+        DummyRead(
+            "KIR2DS3*BACKBONE", "pair4\tA", "", 1.0, 0.0, [], [], ["v_false"], []
+        ),
+        DummyRead(
+            "KIR2DS3*BACKBONE", "pair5\tA", "", 1.0, 0.0, [], [], ["v_false"], []
+        ),
     ]
     positive, negative = collect_variant_support(reads)
     allele_variants = {
@@ -227,7 +274,9 @@ def test_private_support_can_select_lower_likelihood_supported_candidate() -> No
     assert selected == ["KIR2DS3*0010301", "KIR2DS3*0011201"]
 
 
-def test_unsupported_candidate_only_evidence_counts_negative_overcall_variants() -> None:
+def test_unsupported_candidate_only_evidence_counts_negative_overcall_variants() -> (
+    None
+):
     allele_variants = {
         "KIR2DL5A*00107": {"shared"},
         "KIR2DL5A*01201": {"shared", "overcall", "weak"},
@@ -279,8 +328,12 @@ def test_unsupported_overcall_guard_selects_nearby_less_unsupported_candidate() 
         "KIR2DL5A*01201": {"shared", "overcall"},
         "KIR2DL5B*01301": {"shared", "other"},
     }
-    positive: defaultdict[str, float] = defaultdict(float, {"overcall": 0.0, "other": 0.0})
-    negative: defaultdict[str, float] = defaultdict(float, {"overcall": 30.0, "other": 30.0})
+    positive: defaultdict[str, float] = defaultdict(
+        float, {"overcall": 0.0, "other": 0.0}
+    )
+    negative: defaultdict[str, float] = defaultdict(
+        float, {"overcall": 30.0, "other": 30.0}
+    )
 
     selected = select_against_unsupported_candidate_only_variants(
         DummyOvercallResult(),
@@ -297,7 +350,9 @@ def test_unsupported_overcall_guard_selects_nearby_less_unsupported_candidate() 
     assert selected == ["KIR2DL5A*00107", "KIR2DL5A*00107"]
 
 
-def test_targeted_unsupported_overcall_guard_selects_kir2ds5_non_027_alternative() -> None:
+def test_targeted_unsupported_overcall_guard_selects_kir2ds5_non_027_alternative() -> (
+    None
+):
     allele_variants = {
         "KIR2DS5*0210102": {"other_overcall"},
         "KIR2DS5*0270102": {"target_overcall"},
@@ -350,7 +405,9 @@ def test_targeted_unsupported_overcall_guard_ignores_selected_without_prefix() -
     assert selected == ["KIR2DS5*0210102", "KIR2DS5*0020129"]
 
 
-def test_targeted_unsupported_overcall_guard_can_preserve_non_target_resolution() -> None:
+def test_targeted_unsupported_overcall_guard_can_preserve_non_target_resolution() -> (
+    None
+):
     allele_variants = {
         "KIR2DS5*0020113": {"selected_non_target"},
         "KIR2DS5*0270102": {"target_overcall"},
@@ -407,6 +464,38 @@ def test_targeted_unsupported_overcall_guard_penalizes_bad_target_alternative() 
     )
 
     assert selected == ["KIR2DS5*0020113", "KIR2DS5*024"]
+
+
+def test_unsupported_overcall_guard_can_preserve_selected_resolution() -> None:
+    overcall_variants = {f"overcall_{index}" for index in range(6)}
+    allele_variants = {
+        "KIR2DL1*0030242": set(),
+        "KIR2DL1*00303": overcall_variants,
+        "KIR2DL1*0030229": set(),
+        "KIR2DL1*025": set(),
+    }
+    positive: defaultdict[str, float] = defaultdict(float)
+    negative: defaultdict[str, float] = defaultdict(
+        float,
+        {variant: 30.0 for variant in overcall_variants},
+    )
+
+    selected = select_against_unsupported_candidate_only_variants(
+        DummyKIR2DL1SuballeleResult(),
+        ["KIR2DL1*0030242", "KIR2DL1*00303"],
+        allele_variants,
+        positive,
+        negative,
+        min_fraction_ratio=0.7,
+        max_likelihood_gap=200.0,
+        min_unsupported_delta=5,
+        min_net_delta=100.0,
+        selected_allele_prefixes=parse_name_set("KIR2DL1*00303"),
+        preserve_non_target_resolution=3,
+        preserve_selected_resolution=3,
+    )
+
+    assert selected == ["KIR2DL1*0030229", "KIR2DL1*0030242"]
 
 
 def test_unsupported_overcall_guard_respects_likelihood_window() -> None:
@@ -557,7 +646,9 @@ def test_discard_fallback_detects_residual_and_low_ratio_introduced_calls() -> N
     )
 
 
-def test_functional_discard_fallback_requires_functional_change_and_support_gain() -> None:
+def test_functional_discard_fallback_requires_functional_change_and_support_gain() -> (
+    None
+):
     assert should_use_functional_discard_fallback(
         ["KIR2DL1*0030205", "KIR2DL1*0040110"],
         ["KIR2DL1*0030242", "KIR2DL1*00303"],
@@ -584,7 +675,9 @@ def test_functional_discard_fallback_requires_functional_change_and_support_gain
     )
 
 
-def test_functional_promotion_guard_replaces_promoted_copy_with_discard_protected_class() -> None:
+def test_functional_promotion_guard_replaces_promoted_copy_with_discard_protected_class() -> (
+    None
+):
     guarded = apply_functional_promotion_guard(
         ["KIR2DS5*022", "KIR2DS5*0270102"],
         ["KIR2DS5*022", "KIR2DS5*0020133"],
@@ -596,7 +689,9 @@ def test_functional_promotion_guard_replaces_promoted_copy_with_discard_protecte
     assert guarded == ["KIR2DS5*022", "KIR2DS5*0020133"]
 
 
-def test_functional_promotion_guard_reuses_selected_protected_suffix_when_available() -> None:
+def test_functional_promotion_guard_reuses_selected_protected_suffix_when_available() -> (
+    None
+):
     guarded = apply_functional_promotion_guard(
         ["KIR2DS5*0020117", "KIR2DS5*0270102"],
         ["KIR2DS5*0020132", "KIR2DS5*0020132"],
@@ -620,7 +715,9 @@ def test_functional_promotion_guard_ignores_discard_without_protected_class() ->
     assert guarded == ["KIR2DS5*0210102", "KIR2DS5*0270102"]
 
 
-def test_functional_promotion_guard_can_fix_same_three_digit_suballele_promotion() -> None:
+def test_functional_promotion_guard_can_fix_same_three_digit_suballele_promotion() -> (
+    None
+):
     guarded = apply_functional_promotion_guard(
         ["KIR2DS3*00109", "KIR2DS3*020"],
         ["KIR2DS3*0010303", "KIR2DS3*020"],
@@ -722,8 +819,13 @@ def test_typing_plan_carries_private_support_config() -> None:
     assert plan.functional_discard_fallback_resolution == 3
     assert plan.functional_discard_fallback_max_score == -100.0
     assert plan.functional_discard_fallback_min_score_delta == 20.0
-    assert plan.functional_discard_fallback_promoted_alleles == "KIR2DS5*027,KIR2DS3*00109"
-    assert plan.functional_discard_fallback_protected_alleles == "KIR2DS5*002,KIR2DS3*00103"
+    assert (
+        plan.functional_discard_fallback_promoted_alleles == "KIR2DS5*027,KIR2DS3*00109"
+    )
+    assert (
+        plan.functional_discard_fallback_protected_alleles
+        == "KIR2DS5*002,KIR2DS3*00103"
+    )
     assert plan.highest_suffix_tie_break_genes == "KIR2DS4"
     assert plan.samples[0].private_support_genes == "KIR2DS3"
     assert plan.samples[0].base_top_n == 600
@@ -734,10 +836,18 @@ def test_typing_plan_carries_private_support_config() -> None:
     assert plan.samples[0].private_support_discard_fallback_introduced_max_ratio == 0.9
     assert plan.samples[0].private_support_discard_fallback_max_score == -20.0
     assert plan.samples[0].private_support_discard_fallback_residual_min_ratio == 0.7
-    assert plan.samples[0].functional_discard_fallback_genes == "KIR2DL1,KIR2DS5,KIR2DS3"
+    assert (
+        plan.samples[0].functional_discard_fallback_genes == "KIR2DL1,KIR2DS5,KIR2DS3"
+    )
     assert plan.samples[0].functional_discard_fallback_resolution == 3
     assert plan.samples[0].functional_discard_fallback_max_score == -100.0
     assert plan.samples[0].functional_discard_fallback_min_score_delta == 20.0
-    assert plan.samples[0].functional_discard_fallback_promoted_alleles == "KIR2DS5*027,KIR2DS3*00109"
-    assert plan.samples[0].functional_discard_fallback_protected_alleles == "KIR2DS5*002,KIR2DS3*00103"
+    assert (
+        plan.samples[0].functional_discard_fallback_promoted_alleles
+        == "KIR2DS5*027,KIR2DS3*00109"
+    )
+    assert (
+        plan.samples[0].functional_discard_fallback_protected_alleles
+        == "KIR2DS5*002,KIR2DS3*00103"
+    )
     assert plan.samples[0].highest_suffix_tie_break_genes == "KIR2DS4"

@@ -269,6 +269,58 @@ def build_parser() -> argparse.ArgumentParser:
         default=1.0,
         help="Maximum positive support allowed for rank-wide unsupported candidate-only variants.",
     )
+    parser.add_argument(
+        "--discard-unsupported-overcall-guard-genes",
+        default="",
+        help="Optional genes allowed to guard unsupported overcalls using discard-style evidence.",
+    )
+    parser.add_argument(
+        "--discard-unsupported-overcall-guard-alleles",
+        default="",
+        help="Allele prefixes required in the selected call before the discard-evidence guard runs.",
+    )
+    parser.add_argument(
+        "--discard-unsupported-overcall-guard-window",
+        type=float,
+        default=400.0,
+        help="Maximum discard-model likelihood gap for unsupported-overcall alternatives.",
+    )
+    parser.add_argument(
+        "--discard-unsupported-overcall-guard-min-unsupported-delta",
+        type=int,
+        default=5,
+        help="Minimum targeted unsupported-variant improvement required by the discard-evidence guard.",
+    )
+    parser.add_argument(
+        "--discard-unsupported-overcall-guard-min-net-delta",
+        type=float,
+        default=100.0,
+        help="Minimum targeted negative-minus-positive support improvement required by the discard-evidence guard.",
+    )
+    parser.add_argument(
+        "--discard-unsupported-overcall-guard-preserve-non-target-resolution",
+        type=int,
+        default=0,
+        help="Optional allele field length that discard-evidence alternatives must preserve outside target prefixes.",
+    )
+    parser.add_argument(
+        "--discard-unsupported-overcall-guard-preserve-selected-resolution",
+        type=int,
+        default=0,
+        help="Optional allele field length that discard-evidence alternatives must preserve exactly for the selected genotype.",
+    )
+    parser.add_argument(
+        "--discard-unsupported-overcall-guard-negative-threshold",
+        type=float,
+        default=5.0,
+        help="Negative support threshold for discard-evidence unsupported candidate-only variants.",
+    )
+    parser.add_argument(
+        "--discard-unsupported-overcall-guard-max-positive",
+        type=float,
+        default=1.0,
+        help="Maximum positive support allowed for discard-evidence unsupported candidate-only variants.",
+    )
     return parser
 
 
@@ -314,7 +366,9 @@ def main() -> None:
     run_config = preset.to_run_config()
     plan = GraphKir2Pipeline(run_config).build_typing_plan()
     manifest = load_sample_manifest(preset.input_csv)
-    cn_hints = {sample.sample_id: sample.copy_number_hint for sample in manifest.samples}
+    cn_hints = {
+        sample.sample_id: sample.copy_number_hint for sample in manifest.samples
+    }
     neutralize_group_spec = (
         args.neutralize_cross_gene_groups
         if args.neutralize_cross_gene_groups is not None
@@ -406,9 +460,7 @@ def main() -> None:
         else run_config.typing.functional_discard_fallback_protected_alleles
     )
     base_top_n = (
-        args.base_top_n
-        if args.base_top_n is not None
-        else run_config.typing.base_top_n
+        args.base_top_n if args.base_top_n is not None else run_config.typing.base_top_n
     )
     gene_base_top_n_spec = (
         args.gene_base_top_ns
@@ -422,9 +474,15 @@ def main() -> None:
     fallback_residual_alleles = parse_name_set(fallback_residual_spec)
     fallback_introduced_alleles = parse_name_set(fallback_introduced_spec)
     functional_fallback_genes = parse_gene_set(functional_fallback_gene_spec)
-    functional_fallback_promoted_alleles = parse_name_set(functional_fallback_promoted_spec)
-    functional_fallback_protected_alleles = parse_name_set(functional_fallback_protected_spec)
-    unsupported_overcall_guard_genes = parse_gene_set(args.unsupported_overcall_guard_genes)
+    functional_fallback_promoted_alleles = parse_name_set(
+        functional_fallback_promoted_spec
+    )
+    functional_fallback_protected_alleles = parse_name_set(
+        functional_fallback_protected_spec
+    )
+    unsupported_overcall_guard_genes = parse_gene_set(
+        args.unsupported_overcall_guard_genes
+    )
     targeted_unsupported_overcall_guard_genes = parse_gene_set(
         args.targeted_unsupported_overcall_guard_genes
     )
@@ -437,6 +495,12 @@ def main() -> None:
     rankwide_unsupported_overcall_guard_alleles = parse_name_set(
         args.rankwide_unsupported_overcall_guard_alleles
     )
+    discard_unsupported_overcall_guard_genes = parse_gene_set(
+        args.discard_unsupported_overcall_guard_genes
+    )
+    discard_unsupported_overcall_guard_alleles = parse_name_set(
+        args.discard_unsupported_overcall_guard_alleles
+    )
     gene_base_top_ns = parse_gene_top_n_spec(gene_base_top_n_spec)
     has_conditional_gate = bool(
         private_support_condition_alleles or private_support_cross_gene_ratio > 0.0
@@ -445,16 +509,16 @@ def main() -> None:
         run_config.typing.highest_suffix_tie_break_genes
     )
     high_top_n_genes = (
-        private_support_genes
-        | fallback_genes
-        | highest_suffix_tie_break_genes
+        private_support_genes | fallback_genes | highest_suffix_tie_break_genes
     )
 
     rows: list[dict[str, str]] = []
     for sample in plan.samples:
         raw_reads_data = loadReadsAndVariantsData(sample.variant_json)
         reads_data = likelihoodAmbiguousMapped(deepcopy(raw_reads_data))
-        if (args.neutralize_cross_gene or neutralize_groups) and not has_conditional_gate:
+        if (
+            args.neutralize_cross_gene or neutralize_groups
+        ) and not has_conditional_gate:
             neutralize_cross_gene_reads(
                 reads_data["reads"],
                 neutralize_groups,
@@ -512,6 +576,9 @@ def main() -> None:
                 positive,
                 negative,
             )
+            discard_guard_result = None
+            discard_guard_positive = None
+            discard_guard_negative = None
             if private_support_genes and gene_name not in private_support_genes:
                 support_lambda = 0.0
             if support_lambda and (
@@ -571,19 +638,16 @@ def main() -> None:
                 private_support_window,
                 sample.select_min_fraction_ratio,
             )
-            if (
-                gene_name in fallback_genes
-                and should_use_discard_fallback(
-                    selected,
-                    selected_without_rescue,
-                    fallback_residual_alleles,
-                    fallback_introduced_alleles,
-                    conditional_cross_gene_ratio,
-                    fallback_introduced_max_ratio,
-                    base_private_support,
-                    fallback_max_score,
-                    fallback_residual_min_ratio,
-                )
+            if gene_name in fallback_genes and should_use_discard_fallback(
+                selected,
+                selected_without_rescue,
+                fallback_residual_alleles,
+                fallback_introduced_alleles,
+                conditional_cross_gene_ratio,
+                fallback_introduced_max_ratio,
+                base_private_support,
+                fallback_max_score,
+                fallback_residual_min_ratio,
             ):
                 discard_reads_data = removeMultipleMapped(deepcopy(raw_reads_data))
                 discard_gene_reads = groupReads(discard_reads_data["reads"])
@@ -634,19 +698,25 @@ def main() -> None:
                         fallback_positive, fallback_negative = collect_variant_support(
                             fallback_model.reads
                         )
+                        discard_guard_result = fallback_result
+                        discard_guard_positive = fallback_positive
+                        discard_guard_negative = fallback_negative
                         fallback_support = private_support_score(
                             fallback_selected,
                             allele_variants,
                             fallback_positive,
                             fallback_negative,
                         )
-                        if can_use_full_functional_fallback and should_use_functional_discard_fallback(
-                            selected,
-                            fallback_selected,
-                            selected_support,
-                            fallback_support,
-                            functional_fallback_resolution,
-                            functional_fallback_min_score_delta,
+                        if (
+                            can_use_full_functional_fallback
+                            and should_use_functional_discard_fallback(
+                                selected,
+                                fallback_selected,
+                                selected_support,
+                                fallback_support,
+                                functional_fallback_resolution,
+                                functional_fallback_min_score_delta,
+                            )
                         ):
                             selected = fallback_selected
                             model = fallback_model
@@ -718,6 +788,44 @@ def main() -> None:
                     rankwide_unsupported_overcall_guard_alleles,
                     args.rankwide_unsupported_overcall_guard_preserve_non_target_resolution,
                 )
+            if gene_name in discard_unsupported_overcall_guard_genes:
+                if discard_guard_result is None:
+                    discard_reads_data = removeMultipleMapped(deepcopy(raw_reads_data))
+                    discard_gene_reads = groupReads(discard_reads_data["reads"])
+                    if gene in discard_gene_reads:
+                        discard_guard_model = AlleleTyping(
+                            discard_gene_reads[gene],
+                            gene_variants[gene],
+                            top_n=gene_top_n,
+                            variant_correction=True,
+                            exon_weight=1.0,
+                            ambiguity_likelihood=False,
+                        )
+                        discard_guard_result = discard_guard_model.typing(copy_number)
+                        discard_guard_positive, discard_guard_negative = (
+                            collect_variant_support(discard_guard_model.reads)
+                        )
+                if (
+                    discard_guard_result is not None
+                    and discard_guard_positive is not None
+                    and discard_guard_negative is not None
+                ):
+                    selected = select_against_unsupported_candidate_only_variants(
+                        discard_guard_result,
+                        selected,
+                        allele_variants,
+                        discard_guard_positive,
+                        discard_guard_negative,
+                        sample.select_min_fraction_ratio,
+                        args.discard_unsupported_overcall_guard_window,
+                        args.discard_unsupported_overcall_guard_min_unsupported_delta,
+                        args.discard_unsupported_overcall_guard_min_net_delta,
+                        args.discard_unsupported_overcall_guard_negative_threshold,
+                        args.discard_unsupported_overcall_guard_max_positive,
+                        discard_unsupported_overcall_guard_alleles,
+                        args.discard_unsupported_overcall_guard_preserve_non_target_resolution,
+                        args.discard_unsupported_overcall_guard_preserve_selected_resolution,
+                    )
             if gene_name in highest_suffix_tie_break_genes:
                 selected = select_with_highest_suffix_tie_break(
                     result,
@@ -725,8 +833,7 @@ def main() -> None:
                     sample.select_min_fraction_ratio,
                 )
             alleles.extend(
-                allele if allele != "fail" else f"{gene_name}*"
-                for allele in selected
+                allele if allele != "fail" else f"{gene_name}*" for allele in selected
             )
             if model.getReadsNum() < 100:
                 warnings.append(gene)

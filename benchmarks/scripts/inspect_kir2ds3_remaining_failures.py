@@ -9,7 +9,6 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Sequence
 
-
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
@@ -45,7 +44,6 @@ from inspect_remaining_functional_errors import (  # noqa: E402
     read_sweep_summary,
 )
 
-
 KIR2DS3_GENE = "KIR2DS3"
 KIR2DS3_BACKBONE = "KIR2DS3*BACKBONE"
 
@@ -67,7 +65,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--candidate-method",
-        default="enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_geneaware",
+        default="enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_kir2dl1suballele_geneaware",
         help="Candidate method to audit.",
     )
     parser.add_argument(
@@ -167,7 +165,9 @@ def build_variant_rows_from_context(
         ("truth_only", truth_only),
         ("candidate_only", candidate_only),
     ):
-        for variant_id in sorted(variant_ids, key=lambda key: _variant_sort_key(variant_map[key])):
+        for variant_id in sorted(
+            variant_ids, key=lambda key: _variant_sort_key(variant_map[key])
+        ):
             variant = variant_map[variant_id]
             evidence = compute_variant_evidence(variant_id, reads)
             truth_carriers = carriers_of_interest(variant, truth)
@@ -276,7 +276,9 @@ def inspect_kir2ds3_sample(
         "normalized_cn": str(copy_number),
         "current_top_n": str(top_n),
         "raw_reads": str(len(raw_reads)),
-        "raw_informative_reads": str(sum(1 for read in raw_reads if has_read_evidence(read))),
+        "raw_informative_reads": str(
+            sum(1 for read in raw_reads if has_read_evidence(read))
+        ),
         "likelihood_reads": str(len(likelihood_reads)),
         "likelihood_informative_reads": str(
             sum(1 for read in likelihood_reads if has_read_evidence(read))
@@ -314,10 +316,7 @@ def build_audit_outputs(
     if candidate_method not in methods:
         methods = (*methods, candidate_method)
     calls = load_panel_calls(summary_rows, methods)
-    by_label_method = {
-        (row["label"], row["method"]): row
-        for row in summary_rows
-    }
+    by_label_method = {(row["label"], row["method"]): row for row in summary_rows}
     rows_by_sample: dict[tuple[str, str], list[dict[str, str]]] = {}
     for row in remaining_rows:
         rows_by_sample.setdefault(remaining_key(row), []).append(row)

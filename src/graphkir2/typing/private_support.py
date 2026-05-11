@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from typing import Any
 
-
 VariantSupport = defaultdict[str, float]
 GeneGroups = tuple[frozenset[str], ...]
 NameSet = frozenset[str]
@@ -158,7 +157,8 @@ def private_support_score(
         supported = sum(
             1
             for variant_id in private_variants
-            if positive[variant_id] >= 2.0 and positive[variant_id] >= negative[variant_id]
+            if positive[variant_id] >= 2.0
+            and positive[variant_id] >= negative[variant_id]
         )
         unsupported = sum(
             1
@@ -221,9 +221,7 @@ def private_positive_cross_gene_ratio(
 def selected_has_name_prefix(allele_names: list[str], prefixes: NameSet) -> bool:
     """Check whether a selected allele starts with one of the configured prefixes."""
     return any(
-        allele.startswith(prefix)
-        for allele in allele_names
-        for prefix in prefixes
+        allele.startswith(prefix) for allele in allele_names for prefix in prefixes
     )
 
 
@@ -295,7 +293,9 @@ def _functional_resolution_key(
     """Build a sorted allele key at one functional resolution."""
     if not allele_names or any("*" not in allele for allele in allele_names):
         return ()
-    return tuple(sorted(limit_allele_resolution(allele, resolution) for allele in allele_names))
+    return tuple(
+        sorted(limit_allele_resolution(allele, resolution) for allele in allele_names)
+    )
 
 
 def should_use_functional_discard_fallback(
@@ -383,7 +383,9 @@ def apply_functional_promotion_guard(
     for prefix in protected_shortlist:
         needed = discard_protected[prefix] - selected_protected[prefix]
         selected_options = [allele for allele in selected if allele.startswith(prefix)]
-        discard_options = [allele for allele in discard_selected if allele.startswith(prefix)]
+        discard_options = [
+            allele for allele in discard_selected if allele.startswith(prefix)
+        ]
         options = selected_options or discard_options
         if not options:
             continue
@@ -439,6 +441,15 @@ def _non_prefix_resolution_key(
     )
 
 
+def _resolution_counts(allele_names: list[str], resolution: int) -> Counter[str]:
+    """Count genotype allele prefixes at a fixed resolution."""
+    return Counter(
+        limit_allele_resolution(allele, resolution)
+        for allele in allele_names
+        if "*" in allele
+    )
+
+
 def unsupported_candidate_only_evidence(
     candidate: list[str],
     alternative: list[str],
@@ -455,7 +466,9 @@ def unsupported_candidate_only_evidence(
     variants contradicted by negative reads. This helper scores that overcall
     evidence without using sample truth labels.
     """
-    candidate_only = _genotype_variant_ids(candidate, allele_variants) - _genotype_variant_ids(
+    candidate_only = _genotype_variant_ids(
+        candidate, allele_variants
+    ) - _genotype_variant_ids(
         alternative,
         allele_variants,
     )
@@ -503,6 +516,7 @@ def select_against_unsupported_candidate_only_variants(
     max_positive: float = 1.0,
     selected_allele_prefixes: NameSet = frozenset(),
     preserve_non_target_resolution: int = 0,
+    preserve_selected_resolution: int = 0,
 ) -> list[str]:
     """Fallback from an overcalled genotype to a nearby less-unsupported one.
 
@@ -526,13 +540,21 @@ def select_against_unsupported_candidate_only_variants(
                 preserve_non_target_resolution,
             )
         )
+    selected_resolution_counts: Counter[str] = Counter()
+    if preserve_selected_resolution > 0:
+        selected_resolution_counts = _resolution_counts(
+            selected,
+            preserve_selected_resolution,
+        )
 
     selected_key = sorted(selected)
-    selected_index = 0
+    selected_index: int | None = None
     for index, allele_names in enumerate(result.allele_name):  # type: ignore[attr-defined]
         if sorted(allele_names) == selected_key:
             selected_index = index
             break
+    if selected_index is None:
+        return selected
     selected_value = float(result.value[selected_index])  # type: ignore[attr-defined]
 
     best: tuple[float, int, float, list[str]] | None = None
@@ -557,6 +579,15 @@ def select_against_unsupported_candidate_only_variants(
                 for key, count in selected_non_target_counts.items()
             ):
                 continue
+        if (
+            selected_resolution_counts
+            and _resolution_counts(
+                alternative,
+                preserve_selected_resolution,
+            )
+            != selected_resolution_counts
+        ):
+            continue
         selected_unsupported, selected_penalty = unsupported_candidate_only_evidence(
             selected,
             alternative,
@@ -567,15 +598,17 @@ def select_against_unsupported_candidate_only_variants(
             max_positive,
             selected_allele_prefixes,
         )
-        alternative_unsupported, alternative_penalty = unsupported_candidate_only_evidence(
-            alternative,
-            selected,
-            allele_variants,
-            positive,
-            negative,
-            negative_threshold,
-            max_positive,
-            selected_allele_prefixes,
+        alternative_unsupported, alternative_penalty = (
+            unsupported_candidate_only_evidence(
+                alternative,
+                selected,
+                allele_variants,
+                positive,
+                negative,
+                negative_threshold,
+                max_positive,
+                selected_allele_prefixes,
+            )
         )
         unsupported_delta = selected_unsupported - alternative_unsupported
         net_delta = selected_penalty - alternative_penalty
@@ -635,7 +668,9 @@ def select_with_highest_suffix_tie_break(
         return selected
 
     expect_prob = 1 / int(result.n)  # type: ignore[attr-defined]
-    selected_key = sorted(limit_allele_resolution(allele, resolution) for allele in selected)
+    selected_key = sorted(
+        limit_allele_resolution(allele, resolution) for allele in selected
+    )
     selected_index = 0
     for index, allele_names in enumerate(result.allele_name):  # type: ignore[attr-defined]
         if allele_names == selected:
@@ -652,8 +687,7 @@ def select_with_highest_suffix_tie_break(
         ):
             continue
         candidate_key = sorted(
-            limit_allele_resolution(allele, resolution)
-            for allele in allele_names
+            limit_allele_resolution(allele, resolution) for allele in allele_names
         )
         if candidate_key != selected_key:
             continue
