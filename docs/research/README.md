@@ -12,6 +12,11 @@ Use this directory for:
 * tuning logs for ablation runs
 * overfit checks for synthetic candidates before promoting defaults
 
+Current active gate:
+
+* `2026-05-12_real_data_input_checklist.md` — local inputs and commands required
+  before making a direct `graphkir2` vs `Geny` real-data functional-typing claim
+
 Suggested file naming:
 
 * `YYYY-MM-DD-topic.md`

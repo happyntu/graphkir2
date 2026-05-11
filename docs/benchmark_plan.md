@@ -108,6 +108,12 @@ the graphkir allele TSV format, evaluates it with the same 3/5/7-digit evaluator
 used by `run_compare.py`, and writes an explicit missing-input report when the
 raw Geny file is not present.
 
+Use `docs/research/2026-05-12_real_data_input_checklist.md` as the operational
+readiness gate before interpreting any Geny or HPRC real-data result. If the
+required Geny output or HPRC FASTQs are missing, report the missing inputs rather
+than continuing method tuning on synthetic residuals as if it were real-data
+validation.
+
 ## Metrics
 
 ### Functional metrics

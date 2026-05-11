@@ -552,6 +552,11 @@ summary instead of producing misleading metrics. When a graphkir2 prediction TSV
 is available, pass it with `--graphkir-tsv` to evaluate Geny and graphkir2 with
 the same 3/5/7-digit metric implementation.
 
+Use `docs/research/2026-05-12_real_data_input_checklist.md` as the active
+real-data readiness checklist. It records the required Geny raw output, HPRC
+FASTQ locations/naming patterns, readiness commands, and interpretation rules
+for a valid `graphkir2` vs `Geny` claim.
+
 ## Synthetic-First Workflow
 
 For `graphkir2`, prefer a synthetic-first benchmark and tuning loop:
