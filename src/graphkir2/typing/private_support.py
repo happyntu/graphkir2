@@ -51,6 +51,18 @@ def parse_name_set(spec: str) -> NameSet:
     return frozenset(name.strip() for name in spec.split(",") if name.strip())
 
 
+def choose_targeted_top_n(
+    gene_name: str,
+    top_n: int,
+    base_top_n: int | None,
+    target_genes: NameSet,
+) -> int:
+    """Use high top-n only for target genes when a lower base top-n is supplied."""
+    if base_top_n is None or gene_name in target_genes:
+        return top_n
+    return base_top_n
+
+
 def neutralize_cross_gene_reads(
     reads: list[Any],
     gene_groups: GeneGroups = (),

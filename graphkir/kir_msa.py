@@ -204,8 +204,8 @@ def mergeBlockToMsa(blocks: BlockMsa) -> Genemsa:
             blk.append(allele, "-" * blk.get_length())
 
         # merge
-            msa += blk
-            current_alleles = set(msa.alleles.keys())
+        msa += blk
+        current_alleles = set(msa.alleles.keys())
 
     assert msa
     msa = msa.assume_label("gen")

@@ -76,6 +76,11 @@ Real-data benchmarks should not be the first place where method tuning happens.
 * `thread_scaling`
 * `index_reuse`
 
+`hprc_real_sanity` is currently an examples-format smoke preset because it
+points at `examples/cohort.csv`. Treat its evaluation as plumbing validation
+only, not as HPRC accuracy evidence, until the manifest points at real HPRC
+FASTQ/intermediate data with matching truth sample IDs.
+
 ### Method comparisons to support
 
 * legacy `graphkir` vs `graphkir2`

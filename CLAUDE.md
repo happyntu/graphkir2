@@ -210,6 +210,9 @@ Current synthetic functional-target surface:
 * `allele_exon_weight = 2.0`
 * `allele_select_min_fraction_ratio = 0.7`
 * `top_n = 5000` for typing sweeps
+* for full-gene smoke or real-data sanity reruns, keep `--top-n 5000` for the
+  target genes but pass `--base-top-n 600` so non-target genes stay at legacy
+  search depth and do not OOM on `ab_2dl1s1`
 * targeted `KIR2DS3` private-support reranking
 * directional `KIR2DS3/KIR2DS5` cross-gene ambiguity neutralization applied to
   the `KIR2DS3` target evidence, not to `KIR2DS5` typing evidence
@@ -302,6 +305,12 @@ current means are:
 
 Treat enhancedgate as the current synthetic lead. The next validation step is a
 small real-data sanity panel, not broad real-data benchmarking.
+
+Operational note: `benchmarks/configs/hprc_real_sanity.json` currently uses
+`examples/cohort.csv`, so it is an examples-format smoke run rather than a valid
+HPRC accuracy benchmark. Use it to verify the full legacy/rerun plumbing only.
+For enhancedgate smoke on that full gene panel, use `--top-n 5000 --base-top-n
+600`; applying top5000 to every gene can exceed a 15GB WSL memory limit.
 
 ## Synthetic-First Workflow
 

@@ -19,6 +19,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-tsv", required=True, help="Prediction TSV path.")
     parser.add_argument("--top-n", type=int, default=5000, help="Typing top-n.")
     parser.add_argument(
+        "--base-top-n",
+        type=int,
+        default=None,
+        help=(
+            "Optional lower top-n for genes outside private-support, fallback, "
+            "or tie-break target sets."
+        ),
+    )
+    parser.add_argument(
         "--neutralize-cross-gene",
         action="store_true",
         help="Set cross-gene ambiguous read target weights to zero before typing.",
@@ -110,6 +119,7 @@ def main() -> None:
     from graphkir2.core.pipeline import GraphKir2Pipeline
     from graphkir2.io.manifest import load_sample_manifest
     from graphkir2.typing.private_support import (
+        choose_targeted_top_n,
         collect_variant_support,
         neutralize_cross_gene_reads,
         parse_gene_groups,
@@ -202,6 +212,11 @@ def main() -> None:
     highest_suffix_tie_break_genes = parse_gene_set(
         run_config.typing.highest_suffix_tie_break_genes
     )
+    high_top_n_genes = (
+        private_support_genes
+        | fallback_genes
+        | highest_suffix_tie_break_genes
+    )
 
     rows: list[dict[str, str]] = []
     for sample in plan.samples:
@@ -227,10 +242,17 @@ def main() -> None:
         for gene, copy_number in cn.items():
             if not copy_number:
                 continue
+            gene_name = pure_gene(gene)
+            gene_top_n = choose_targeted_top_n(
+                gene_name,
+                args.top_n,
+                args.base_top_n,
+                high_top_n_genes,
+            )
             model = AlleleTyping(
                 gene_reads[gene],
                 gene_variants[gene],
-                top_n=args.top_n,
+                top_n=gene_top_n,
                 variant_correction=True,
                 exon_weight=2.0,
                 ambiguity_likelihood=True,
@@ -246,7 +268,6 @@ def main() -> None:
                 }
                 for allele in model.allele_to_id
             }
-            gene_name = pure_gene(gene)
             support_lambda = private_support_lambda
             selected_without_rescue = result.selectBest(
                 min_fraction_ratio=sample.select_min_fraction_ratio
@@ -290,7 +311,7 @@ def main() -> None:
                     model = AlleleTyping(
                         rescue_gene_reads[gene],
                         gene_variants[gene],
-                        top_n=args.top_n,
+                        top_n=gene_top_n,
                         variant_correction=True,
                         exon_weight=2.0,
                         ambiguity_likelihood=True,
@@ -337,7 +358,7 @@ def main() -> None:
                     fallback_model = AlleleTyping(
                         discard_gene_reads[gene],
                         gene_variants[gene],
-                        top_n=args.top_n,
+                        top_n=gene_top_n,
                         variant_correction=True,
                         exon_weight=1.0,
                         ambiguity_likelihood=False,

@@ -11,6 +11,7 @@ from graphkir2.config.runtime import TypingConfig
 from graphkir2.mapping.interface import IndexBuildPlan, MappingPlan, SampleMappingPlan
 from graphkir2.typing.interface import AlleleTyper
 from graphkir2.typing.private_support import (
+    choose_targeted_top_n,
     collect_variant_support,
     neutralize_cross_gene_reads,
     parse_gene_groups,
@@ -80,6 +81,14 @@ def test_private_support_neutralizes_configured_cross_gene_group_only() -> None:
 
     assert [read.weight for read in reads] == [0.0, 0.0, 0.5, 0.5]
     assert [read.ambiguous_weight for read in reads] == [1.0, 1.0, 0.5, 0.5]
+
+
+def test_choose_targeted_top_n_keeps_high_top_n_for_target_genes() -> None:
+    target_genes = frozenset({"KIR2DS3", "KIR2DS4"})
+
+    assert choose_targeted_top_n("KIR2DS3", 5000, 600, target_genes) == 5000
+    assert choose_targeted_top_n("KIR3DL3", 5000, 600, target_genes) == 600
+    assert choose_targeted_top_n("KIR3DL3", 5000, None, target_genes) == 5000
 
 
 def test_private_support_can_neutralize_only_target_gene_in_cross_gene_group() -> None:

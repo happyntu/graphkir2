@@ -11,6 +11,7 @@ import json
 import bisect
 from typing import TypedDict, Iterable
 from dataclasses import dataclass, field, asdict
+from pathlib import Path
 
 from .utils import samtobam, logger
 from .external_tools import runTool
@@ -71,6 +72,7 @@ def hisatMap(index: str, f1: str, f2: str, output_file: str, threads: int = 1) -
     """run hisat2"""
     assert output_file.endswith(".bam")
     output_name = output_file.rsplit(".", 1)[0]
+    Path(output_name).parent.mkdir(parents=True, exist_ok=True)
     runTool(
         "hisat",
         [
