@@ -262,6 +262,23 @@ The second gate is represented by
 current targeted synthetic candidate, not the global default, until it is tested
 on broader synthetic seeds and real-data sanity panels.
 
+Broader synthetic seed validation on `synthetic-difficult5x12-seed5101`,
+`seed5102`, and `seed5103` shows this candidate is not robust enough:
+
+* discard mean: `0.9583 / 0.9528 / 0.9000`
+* ratio080 mean: `0.9667 / 0.9611 / 0.9361`
+* secondgate mean: `0.9639 / 0.9583 / 0.9361`
+
+However, `KIR2DS3` functional accuracy regresses versus discard:
+
+* discard `KIR2DS3`: `0.9583 / 0.9306 / 0.9306`
+* ratio080 `KIR2DS3`: `0.9306 / 0.9028 / 0.8750`
+* secondgate `KIR2DS3`: `0.9167 / 0.8889 / 0.8750`
+
+Do not move this method to real-data sanity yet. Next method work must recover
+`KIR2DS3` 3/5-digit robustness across seeds while preserving the whole-panel
+`7-digit` gain.
+
 ## Synthetic-First Workflow
 
 For `graphkir2`, prefer a synthetic-first benchmark and tuning loop:

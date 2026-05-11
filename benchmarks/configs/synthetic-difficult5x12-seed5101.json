@@ -1,0 +1,21 @@
+{
+  "benchmark_label": "synthetic-difficult5x12-seed5101",
+  "input_csv": "benchmarks/generated/synthetic-difficult5x12-seed5101/manifest.csv",
+  "output_cohort_name": "benchmarks/results/synthetic-difficult5x12-seed5101/cohort",
+  "thread": 2,
+  "memory_gb": 7,
+  "engine": "local",
+  "ref_genome": "hg19",
+  "index_folder": "benchmarks/generated/synthetic-difficult5x12-seed5101/index_ab",
+  "ipd_version": "2100",
+  "msa_type": "ab",
+  "use_exon_only_alleles": false,
+  "multi_map_policy": "discard",
+  "allele_strategy": "full",
+  "allele_exon_weight": 1.0,
+  "allele_truth_tsv": "benchmarks/generated/synthetic-difficult5x12-seed5101/synthetic-difficult5x12-seed5101_truth.tsv",
+  "cn_diploid_gene": "",
+  "cn_cohort": false,
+  "assume_3dl3_diploid": true,
+  "step_skip_extraction": true
+}
