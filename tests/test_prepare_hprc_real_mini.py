@@ -7,6 +7,7 @@ from prepare_hprc_real_mini import (  # noqa: E402
     HprcSample,
     build_enhancedgate_preset,
     build_preset,
+    current_lead_typing_command,
     read_hprc_samples,
     read_truth_sample_ids,
     select_available_samples,
@@ -68,7 +69,9 @@ def test_write_manifest_and_build_preset(tmp_path: Path) -> None:
     )[0][0]
     manifest = tmp_path / "manifest.csv"
 
-    write_manifest([sample], manifest, output_dir=Path("benchmarks/results/hprc-real-mini"))
+    write_manifest(
+        [sample], manifest, output_dir=Path("benchmarks/results/hprc-real-mini")
+    )
 
     assert manifest.read_text(encoding="utf-8").splitlines() == [
         "name,r1,r2,cnfile",
@@ -90,7 +93,10 @@ def test_write_manifest_and_build_preset(tmp_path: Path) -> None:
     assert enhanced["allele_base_top_n"] == 600
     assert enhanced["allele_gene_base_top_ns"] == "KIR2DL1:1000"
     assert enhanced["allele_private_support_genes"] == "KIR2DS3"
-    assert enhanced["allele_functional_discard_fallback_genes"] == "KIR2DL1,KIR2DS5,KIR2DS3"
+    assert (
+        enhanced["allele_functional_discard_fallback_genes"]
+        == "KIR2DL1,KIR2DS5,KIR2DS3"
+    )
     assert enhanced["allele_functional_discard_fallback_max_score"] == -100.0
     assert (
         enhanced["allele_functional_discard_fallback_promoted_alleles"]
@@ -100,3 +106,28 @@ def test_write_manifest_and_build_preset(tmp_path: Path) -> None:
         enhanced["allele_functional_discard_fallback_protected_alleles"]
         == "KIR2DS5*002,KIR2DS3*00103"
     )
+
+    command = current_lead_typing_command(
+        Path("enhanced.json"),
+        Path("enhanced.allele.tsv"),
+    )
+    assert command[:6] == [
+        "python",
+        "benchmarks/scripts/rerun_typing_private_support.py",
+        "--config",
+        "enhanced.json",
+        "--top-n",
+        "5000",
+    ]
+    assert "--unsupported-overcall-guard-genes" in command
+    assert "KIR2DL5" in command
+    assert "--targeted-unsupported-overcall-guard-genes" in command
+    assert "KIR2DS5" in command
+    assert "--rankwide-unsupported-overcall-guard-genes" in command
+    assert "KIR2DS3" in command
+    assert "--discard-unsupported-overcall-guard-genes" in command
+    assert "KIR2DL1" in command
+    assert (
+        "--discard-unsupported-overcall-guard-preserve-selected-resolution" in command
+    )
+    assert command[-2:] == ["--output-tsv", "enhanced.allele.tsv"]

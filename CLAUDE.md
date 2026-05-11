@@ -519,7 +519,11 @@ For enhancedgate smoke on that full gene panel, use the committed
 `benchmarks/configs/hprc_real_sanity_enhancedgate.json`; applying top5000 to
 every gene can exceed a 15GB WSL memory limit. The committed enhancedgate sanity
 config includes gene-aware top-n, the `KIR2DL1` functional fallback, and the
-`KIR2DS5/KIR2DS3` promotion guards. Synthetic profiling showed plain
+`KIR2DS5/KIR2DS3` promotion guards. The newer KIR2DL5, targeted KIR2DS5,
+rankwide KIR2DS3, and KIR2DL1 suballele guards are CLI-only flags on
+`rerun_typing_private_support.py`; use the command printed by
+`benchmarks/scripts/prepare_hprc_real_mini.py` for a current-lead real-mini
+typing rerun. Synthetic profiling showed plain
 `base_top_n = 600` can regress
 `synthetic-functional8x6` KIR2DL1, while the gene-aware setting
 `base_top_n = 600` plus `KIR2DL1:1000` recovered the observed aggregate
@@ -533,7 +537,8 @@ discovers paired FASTQs under `GRAPHKIR_HPRC_FASTQ_ROOTS`,
 manifest/config files only when real sample data exists. It writes a baseline
 config and an enhancedgate config with `allele_base_top_n = 600`,
 `allele_gene_base_top_ns = KIR2DL1:1000`, the `KIR2DL1` functional fallback, and
-the `KIR2DS5/KIR2DS3` promotion guards.
+the `KIR2DS5/KIR2DS3` promotion guards, then prints a full current-lead rerun
+command including the CLI-only KIR2DL5/KIR2DS5/KIR2DS3/KIR2DL1 guards.
 As of
 2026-05-11, this workspace does not contain local HPRC KIR FASTQs or `data_real`
 intermediates.

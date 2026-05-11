@@ -65,7 +65,9 @@ def read_truth_sample_ids(truth_tsv: Path) -> frozenset[str]:
     return frozenset(ids)
 
 
-def candidate_fastq_pairs(root: Path, sample: HprcSample) -> tuple[tuple[Path, Path], ...]:
+def candidate_fastq_pairs(
+    root: Path, sample: HprcSample
+) -> tuple[tuple[Path, Path], ...]:
     """Generate likely FASTQ pair paths for common HPRC naming conventions."""
     accession = sample.accession
     sample_id = sample.sample_id
@@ -133,7 +135,9 @@ def select_available_samples(
     return available, missing
 
 
-def write_manifest(samples: list[AvailableSample], path: Path, output_dir: Path) -> None:
+def write_manifest(
+    samples: list[AvailableSample], path: Path, output_dir: Path
+) -> None:
     """Write a Graph-KIR input manifest for available samples."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
@@ -224,6 +228,78 @@ def build_enhancedgate_preset(base_preset: dict[str, object]) -> dict[str, objec
     return preset
 
 
+def current_lead_guard_args() -> tuple[str, ...]:
+    """Return CLI-only guard flags for the current synthetic functional lead."""
+    return (
+        "--unsupported-overcall-guard-genes",
+        "KIR2DL5",
+        "--unsupported-overcall-guard-window",
+        "25.0",
+        "--unsupported-overcall-guard-min-unsupported-delta",
+        "2",
+        "--unsupported-overcall-guard-min-net-delta",
+        "20.0",
+        "--targeted-unsupported-overcall-guard-genes",
+        "KIR2DS5",
+        "--targeted-unsupported-overcall-guard-alleles",
+        "KIR2DS5*027,KIR2DS5*010",
+        "--targeted-unsupported-overcall-guard-window",
+        "25.0",
+        "--targeted-unsupported-overcall-guard-min-unsupported-delta",
+        "1",
+        "--targeted-unsupported-overcall-guard-min-net-delta",
+        "20.0",
+        "--targeted-unsupported-overcall-guard-preserve-non-target-resolution",
+        "5",
+        "--rankwide-unsupported-overcall-guard-genes",
+        "KIR2DS3",
+        "--rankwide-unsupported-overcall-guard-alleles",
+        "KIR2DS3*0020101",
+        "--rankwide-unsupported-overcall-guard-window",
+        "400.0",
+        "--rankwide-unsupported-overcall-guard-min-unsupported-delta",
+        "1",
+        "--rankwide-unsupported-overcall-guard-min-net-delta",
+        "20.0",
+        "--rankwide-unsupported-overcall-guard-max-selected-support",
+        "-100.0",
+        "--rankwide-unsupported-overcall-guard-preserve-non-target-resolution",
+        "3",
+        "--discard-unsupported-overcall-guard-genes",
+        "KIR2DL1",
+        "--discard-unsupported-overcall-guard-alleles",
+        "KIR2DL1*00303",
+        "--discard-unsupported-overcall-guard-window",
+        "400.0",
+        "--discard-unsupported-overcall-guard-min-unsupported-delta",
+        "5",
+        "--discard-unsupported-overcall-guard-min-net-delta",
+        "100.0",
+        "--discard-unsupported-overcall-guard-preserve-non-target-resolution",
+        "3",
+        "--discard-unsupported-overcall-guard-preserve-selected-resolution",
+        "3",
+    )
+
+
+def current_lead_typing_command(
+    enhanced_config_path: Path,
+    output_tsv: Path,
+) -> list[str]:
+    """Build the recommended current-lead rerun command."""
+    return [
+        "python",
+        "benchmarks/scripts/rerun_typing_private_support.py",
+        "--config",
+        str(enhanced_config_path),
+        "--top-n",
+        "5000",
+        *current_lead_guard_args(),
+        "--output-tsv",
+        str(output_tsv),
+    ]
+
+
 def write_preset(preset: dict[str, object], path: Path) -> None:
     """Write a benchmark preset JSON."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -236,7 +312,9 @@ def build_parser() -> argparse.ArgumentParser:
         description="Prepare a small HPRC real-data benchmark when FASTQs exist locally.",
     )
     parser.add_argument("--cohort-csv", default="data/cohorts/hprc.csv")
-    parser.add_argument("--truth-tsv", default="data/groundtruth/hprc_summary_v1_2_e.tsv")
+    parser.add_argument(
+        "--truth-tsv", default="data/groundtruth/hprc_summary_v1_2_e.tsv"
+    )
     parser.add_argument("--fastq-root", action="append", default=[])
     parser.add_argument("--recursive", action="store_true")
     parser.add_argument("--max-samples", type=int, default=4)
@@ -311,9 +389,12 @@ def main() -> None:
     )
     print("Run enhancedgate typing from the same intermediates:")
     print(
-        "python benchmarks/scripts/rerun_typing_private_support.py "
-        f"--config {enhanced_config_path} --top-n 5000 "
-        "--output-tsv benchmarks/results/hprc-real-mini/enhancedgate.allele.tsv "
+        " ".join(
+            current_lead_typing_command(
+                enhanced_config_path,
+                Path("benchmarks/results/hprc-real-mini/enhancedgate.allele.tsv"),
+            )
+        )
     )
     print("Evaluate enhancedgate:")
     print(

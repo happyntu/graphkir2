@@ -88,7 +88,10 @@ benchmark preset. The generated enhancedgate preset carries
 `allele_base_top_n = 600` plus `allele_gene_base_top_ns = KIR2DL1:1000`, so
 full-gene reruns keep high `top_n` only for target genes and preserve search
 depth for the observed KIR2DL1-sensitive case. Synthetic profiling found plain
-`600` was too aggressive for `synthetic-functional8x6` KIR2DL1.
+`600` was too aggressive for `synthetic-functional8x6` KIR2DL1. The script also
+prints the current-lead `rerun_typing_private_support.py` command with CLI-only
+KIR2DL5, KIR2DS5, KIR2DS3 rankwide, and KIR2DL1 suballele guards; those guards
+are not stored in the JSON preset schema.
 
 ### Method comparisons to support
 
