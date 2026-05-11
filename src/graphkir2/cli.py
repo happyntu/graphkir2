@@ -267,6 +267,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Minimum private-support score advantage required for functional discard fallback.",
     )
     parser.add_argument(
+        "--allele-functional-discard-fallback-promoted-alleles",
+        default="",
+        help="Allele prefixes whose likelihood-only promotion may be guarded by discard functional evidence.",
+    )
+    parser.add_argument(
+        "--allele-functional-discard-fallback-protected-alleles",
+        default="",
+        help="Discard allele prefixes to protect when a configured promoted allele replaces them.",
+    )
+    parser.add_argument(
         "--allele-highest-suffix-tie-break-genes",
         default="",
         help="Comma-separated genes where exact likelihood ties keep the highest 7-digit suffix within the same 5-digit call.",
@@ -354,6 +364,8 @@ def entrypoint() -> None:
             functional_discard_fallback_resolution=args.allele_functional_discard_fallback_resolution,
             functional_discard_fallback_max_score=args.allele_functional_discard_fallback_max_score,
             functional_discard_fallback_min_score_delta=args.allele_functional_discard_fallback_min_score_delta,
+            functional_discard_fallback_promoted_alleles=args.allele_functional_discard_fallback_promoted_alleles,
+            functional_discard_fallback_protected_alleles=args.allele_functional_discard_fallback_protected_alleles,
             highest_suffix_tie_break_genes=args.allele_highest_suffix_tie_break_genes,
         ),
         print_plan=args.print_plan,

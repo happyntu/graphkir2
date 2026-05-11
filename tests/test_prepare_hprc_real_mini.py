@@ -90,5 +90,7 @@ def test_write_manifest_and_build_preset(tmp_path: Path) -> None:
     assert enhanced["allele_base_top_n"] == 600
     assert enhanced["allele_gene_base_top_ns"] == "KIR2DL1:1000"
     assert enhanced["allele_private_support_genes"] == "KIR2DS3"
-    assert enhanced["allele_functional_discard_fallback_genes"] == "KIR2DL1"
+    assert enhanced["allele_functional_discard_fallback_genes"] == "KIR2DL1,KIR2DS5"
     assert enhanced["allele_functional_discard_fallback_max_score"] == -100.0
+    assert enhanced["allele_functional_discard_fallback_promoted_alleles"] == "KIR2DS5*027"
+    assert enhanced["allele_functional_discard_fallback_protected_alleles"] == "KIR2DS5*002"

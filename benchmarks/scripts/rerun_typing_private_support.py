@@ -126,6 +126,16 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional maximum selected-call private-support score allowed for functional fallback.",
     )
+    parser.add_argument(
+        "--functional-discard-fallback-promoted-alleles",
+        default=None,
+        help="Optional allele prefixes whose likelihood-only promotion should be guarded.",
+    )
+    parser.add_argument(
+        "--functional-discard-fallback-protected-alleles",
+        default=None,
+        help="Optional discard allele prefixes to protect from configured promotions.",
+    )
     return parser
 
 
@@ -148,6 +158,7 @@ def main() -> None:
     from graphkir2.io.manifest import load_sample_manifest
     from graphkir2.typing.private_support import (
         choose_targeted_top_n,
+        apply_functional_promotion_guard,
         collect_variant_support,
         neutralize_cross_gene_reads,
         parse_gene_groups,
@@ -250,6 +261,16 @@ def main() -> None:
         if args.functional_discard_fallback_max_score is not None
         else run_config.typing.functional_discard_fallback_max_score
     )
+    functional_fallback_promoted_spec = (
+        args.functional_discard_fallback_promoted_alleles
+        if args.functional_discard_fallback_promoted_alleles is not None
+        else run_config.typing.functional_discard_fallback_promoted_alleles
+    )
+    functional_fallback_protected_spec = (
+        args.functional_discard_fallback_protected_alleles
+        if args.functional_discard_fallback_protected_alleles is not None
+        else run_config.typing.functional_discard_fallback_protected_alleles
+    )
     base_top_n = (
         args.base_top_n
         if args.base_top_n is not None
@@ -267,6 +288,8 @@ def main() -> None:
     fallback_residual_alleles = parse_name_set(fallback_residual_spec)
     fallback_introduced_alleles = parse_name_set(fallback_introduced_spec)
     functional_fallback_genes = parse_gene_set(functional_fallback_gene_spec)
+    functional_fallback_promoted_alleles = parse_name_set(functional_fallback_promoted_spec)
+    functional_fallback_protected_alleles = parse_name_set(functional_fallback_protected_spec)
     gene_base_top_ns = parse_gene_top_n_spec(gene_base_top_n_spec)
     has_conditional_gate = bool(
         private_support_condition_alleles or private_support_cross_gene_ratio > 0.0
@@ -438,7 +461,11 @@ def main() -> None:
                     positive,
                     negative,
                 )
-                if selected_support <= functional_fallback_max_score:
+                has_promotion_guard = bool(
+                    functional_fallback_promoted_alleles
+                    and functional_fallback_protected_alleles
+                )
+                if selected_support <= functional_fallback_max_score or has_promotion_guard:
                     discard_reads_data = removeMultipleMapped(deepcopy(raw_reads_data))
                     discard_gene_reads = groupReads(discard_reads_data["reads"])
                     if gene in discard_gene_reads:
@@ -473,6 +500,16 @@ def main() -> None:
                         ):
                             selected = fallback_selected
                             model = fallback_model
+                        else:
+                            guarded_selected = apply_functional_promotion_guard(
+                                selected,
+                                fallback_selected,
+                                functional_fallback_promoted_alleles,
+                                functional_fallback_protected_alleles,
+                                functional_fallback_resolution,
+                            )
+                            if guarded_selected != selected:
+                                selected = guarded_selected
             if gene_name in highest_suffix_tie_break_genes:
                 selected = select_with_highest_suffix_tie_break(
                     result,

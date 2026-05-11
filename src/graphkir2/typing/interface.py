@@ -62,6 +62,8 @@ class SampleTypingPlan:
     functional_discard_fallback_resolution: int
     functional_discard_fallback_max_score: float
     functional_discard_fallback_min_score_delta: float
+    functional_discard_fallback_promoted_alleles: str
+    functional_discard_fallback_protected_alleles: str
     highest_suffix_tie_break_genes: str
 
 
@@ -94,6 +96,8 @@ class TypingPlan:
     functional_discard_fallback_resolution: int
     functional_discard_fallback_max_score: float
     functional_discard_fallback_min_score_delta: float
+    functional_discard_fallback_promoted_alleles: str
+    functional_discard_fallback_protected_alleles: str
     highest_suffix_tie_break_genes: str
     merged_allele_tsv: str
     samples: tuple[SampleTypingPlan, ...]
@@ -127,6 +131,8 @@ class TypingPlan:
             f"functional_discard_fallback_resolution={self.functional_discard_fallback_resolution}",
             f"functional_discard_fallback_max_score={self.functional_discard_fallback_max_score}",
             f"functional_discard_fallback_min_score_delta={self.functional_discard_fallback_min_score_delta}",
+            f"functional_discard_fallback_promoted_alleles={self.functional_discard_fallback_promoted_alleles or '<none>'}",
+            f"functional_discard_fallback_protected_alleles={self.functional_discard_fallback_protected_alleles or '<none>'}",
             f"highest_suffix_tie_break_genes={self.highest_suffix_tie_break_genes or '<none>'}",
             f"merged_allele_tsv={self.merged_allele_tsv}",
             f"samples={len(self.samples)}",
@@ -165,6 +171,8 @@ class TypingPlan:
                     f"  functional_discard_fallback_resolution={sample.functional_discard_fallback_resolution}",
                     f"  functional_discard_fallback_max_score={sample.functional_discard_fallback_max_score}",
                     f"  functional_discard_fallback_min_score_delta={sample.functional_discard_fallback_min_score_delta}",
+                    f"  functional_discard_fallback_promoted_alleles={sample.functional_discard_fallback_promoted_alleles or '<none>'}",
+                    f"  functional_discard_fallback_protected_alleles={sample.functional_discard_fallback_protected_alleles or '<none>'}",
                     f"  highest_suffix_tie_break_genes={sample.highest_suffix_tie_break_genes or '<none>'}",
                 ]
             )
@@ -230,6 +238,8 @@ class AlleleTyper:
                     functional_discard_fallback_resolution=config.functional_discard_fallback_resolution,
                     functional_discard_fallback_max_score=config.functional_discard_fallback_max_score,
                     functional_discard_fallback_min_score_delta=config.functional_discard_fallback_min_score_delta,
+                    functional_discard_fallback_promoted_alleles=config.functional_discard_fallback_promoted_alleles,
+                    functional_discard_fallback_protected_alleles=config.functional_discard_fallback_protected_alleles,
                     highest_suffix_tie_break_genes=config.highest_suffix_tie_break_genes,
                 )
             )
@@ -260,6 +270,8 @@ class AlleleTyper:
             functional_discard_fallback_resolution=config.functional_discard_fallback_resolution,
             functional_discard_fallback_max_score=config.functional_discard_fallback_max_score,
             functional_discard_fallback_min_score_delta=config.functional_discard_fallback_min_score_delta,
+            functional_discard_fallback_promoted_alleles=config.functional_discard_fallback_promoted_alleles,
+            functional_discard_fallback_protected_alleles=config.functional_discard_fallback_protected_alleles,
             highest_suffix_tie_break_genes=config.highest_suffix_tie_break_genes,
             merged_allele_tsv=cohort_name + ".allele.tsv",
             samples=tuple(sample_plans),

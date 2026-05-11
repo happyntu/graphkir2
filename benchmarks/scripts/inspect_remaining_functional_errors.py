@@ -15,6 +15,7 @@ DEFAULT_METHODS = (
     "likelihood_top5000",
     "enhancedgate_geneaware",
     "enhancedgate_kir2dl1fallback_geneaware",
+    "enhancedgate_kir2dl1_kir2ds5guard_geneaware",
 )
 
 
@@ -30,7 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--candidate-method",
-        default="enhancedgate_kir2dl1fallback_geneaware",
+        default="enhancedgate_kir2dl1_kir2ds5guard_geneaware",
         help="Method whose remaining functional errors should be triaged.",
     )
     parser.add_argument(
@@ -382,8 +383,8 @@ def render_markdown(
             "",
             "## Recommended Next Method Work",
             "",
-            "* Add a targeted guard for KIR2DS5 likelihood/private-support promotion, especially KIR2DS5*027 replacing KIR2DS5*002 when discard already matches truth.",
-            "* Treat the KIR2DS3 residual as mostly 5-digit suballele cleanup; avoid broad KIR2DS3/KIR2DS5 neutralization that could erase the current KIR2DS3 3-digit gains.",
+            "* If KIR2DS5 candidate regressions remain, tighten the KIR2DS5*027 promotion guard rather than broadening KIR2DS3/KIR2DS5 neutralization.",
+            "* Treat KIR2DS3 residuals as mostly 5-digit suballele cleanup; avoid broad KIR2DS3/KIR2DS5 neutralization that could erase the current KIR2DS3 3-digit gains.",
             "* Keep KIR2DL5A/B separate from the KIR2DS3/KIR2DS5 gate work because its errors include copy-number or A/B placement mismatches shared by all current methods.",
         ]
     )

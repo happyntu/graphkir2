@@ -73,6 +73,26 @@ def test_build_typing_command_adds_functional_fallback_overrides() -> None:
     ]
 
 
+def test_build_typing_command_adds_functional_promotion_guard_overrides() -> None:
+    method = [
+        item
+        for item in DEFAULT_METHODS
+        if item.name == "enhancedgate_kir2dl1_kir2ds5guard_geneaware"
+    ][0]
+    paths = paths_for("synthetic-x", method, Path("results"))
+
+    command = build_typing_command(method, paths)
+
+    assert command[-4:] == [
+        "--functional-discard-fallback-promoted-alleles",
+        "KIR2DS5*027",
+        "--functional-discard-fallback-protected-alleles",
+        "KIR2DS5*002",
+    ]
+    assert "--functional-discard-fallback-genes" in command
+    assert "KIR2DL1,KIR2DS5" in command
+
+
 def test_functional_regressions_compares_only_three_and_five_digit() -> None:
     rows = [
         {

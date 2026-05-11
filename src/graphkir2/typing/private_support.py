@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from typing import Any
 
 
@@ -314,6 +314,89 @@ def should_use_functional_discard_fallback(
     if selected_key == discard_key:
         return False
     return discard_private_support >= selected_private_support + min_score_delta
+
+
+def _name_prefix_counts(allele_names: list[str], prefixes: NameSet) -> Counter[str]:
+    """Count selected alleles by configured allele-name prefix."""
+    counts: Counter[str] = Counter()
+    for allele in allele_names:
+        for prefix in prefixes:
+            if allele.startswith(prefix):
+                counts[prefix] += 1
+    return counts
+
+
+def apply_functional_promotion_guard(
+    selected: list[str],
+    discard_selected: list[str],
+    promoted_alleles: NameSet,
+    protected_alleles: NameSet,
+    resolution: int = 3,
+) -> list[str]:
+    """Replace configured promoted calls with protected functional evidence.
+
+    This guard is intentionally narrower than a full discard fallback. It only
+    fires when likelihood introduced a configured promoted allele prefix and
+    discard has extra copies of a configured protected prefix. When possible,
+    it reuses an already selected protected allele suffix to avoid unnecessary
+    7-digit churn while fixing the functional class.
+    """
+    if not promoted_alleles or not protected_alleles:
+        return selected
+    selected_key = _functional_resolution_key(selected, resolution)
+    discard_key = _functional_resolution_key(discard_selected, resolution)
+    if not selected_key or not discard_key or len(selected_key) != len(discard_key):
+        return selected
+    if selected_key == discard_key:
+        return selected
+
+    selected_promoted = _name_prefix_counts(selected, promoted_alleles)
+    discard_promoted = _name_prefix_counts(discard_selected, promoted_alleles)
+    selected_protected = _name_prefix_counts(selected, protected_alleles)
+    discard_protected = _name_prefix_counts(discard_selected, protected_alleles)
+
+    promoted_shortlist = [
+        prefix
+        for prefix, count in selected_promoted.items()
+        if count > discard_promoted[prefix]
+    ]
+    protected_shortlist = [
+        prefix
+        for prefix, count in discard_protected.items()
+        if count > selected_protected[prefix]
+    ]
+    if not promoted_shortlist or not protected_shortlist:
+        return selected
+
+    guarded = list(selected)
+    promoted_indices: list[int] = []
+    remaining_promoted = {
+        prefix: selected_promoted[prefix] - discard_promoted[prefix]
+        for prefix in promoted_shortlist
+    }
+    for index, allele in enumerate(selected):
+        for prefix in promoted_shortlist:
+            if remaining_promoted[prefix] > 0 and allele.startswith(prefix):
+                promoted_indices.append(index)
+                remaining_promoted[prefix] -= 1
+                break
+
+    replacements: list[str] = []
+    for prefix in protected_shortlist:
+        needed = discard_protected[prefix] - selected_protected[prefix]
+        selected_options = [allele for allele in selected if allele.startswith(prefix)]
+        discard_options = [allele for allele in discard_selected if allele.startswith(prefix)]
+        options = selected_options or discard_options
+        if not options:
+            continue
+        for index in range(needed):
+            replacements.append(options[min(index, len(options) - 1)])
+
+    if not promoted_indices or not replacements:
+        return selected
+    for index, replacement in zip(promoted_indices, replacements):
+        guarded[index] = replacement
+    return guarded
 
 
 def select_with_private_support(

@@ -144,6 +144,18 @@ def build_legacy_graphkir_command(config: GraphKir2RunConfig) -> LegacyCommandPl
             "legacy graphkir CLI has no private-support reranking flags; "
             "this graphkir2 config represents a refactor-only typing enhancement"
         )
+    if (
+        config.typing.functional_discard_fallback_genes
+        or config.typing.functional_discard_fallback_max_score != 0.0
+        or config.typing.functional_discard_fallback_min_score_delta != 0.0
+        or config.typing.functional_discard_fallback_promoted_alleles
+        or config.typing.functional_discard_fallback_protected_alleles
+    ):
+        exact_config_match = False
+        notes.append(
+            "legacy graphkir CLI has no functional discard-fallback flags; "
+            "this graphkir2 config represents a refactor-only typing enhancement"
+        )
     if config.typing.highest_suffix_tie_break_genes:
         exact_config_match = False
         notes.append(
