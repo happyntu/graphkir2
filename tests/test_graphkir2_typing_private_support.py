@@ -15,6 +15,7 @@ from graphkir2.typing.private_support import (
     collect_variant_support,
     neutralize_cross_gene_reads,
     parse_gene_groups,
+    parse_gene_top_n_spec,
     parse_name_set,
     private_positive_cross_gene_ratio,
     select_with_highest_suffix_tie_break,
@@ -89,6 +90,20 @@ def test_choose_targeted_top_n_keeps_high_top_n_for_target_genes() -> None:
     assert choose_targeted_top_n("KIR2DS3", 5000, 600, target_genes) == 5000
     assert choose_targeted_top_n("KIR3DL3", 5000, 600, target_genes) == 600
     assert choose_targeted_top_n("KIR3DL3", 5000, None, target_genes) == 5000
+    assert (
+        choose_targeted_top_n(
+            "KIR2DL1",
+            5000,
+            600,
+            target_genes,
+            {"KIR2DL1": 1000},
+        )
+        == 1000
+    )
+    assert parse_gene_top_n_spec("KIR2DL1:1000,KIR3DL3:2000") == {
+        "KIR2DL1": 1000,
+        "KIR3DL3": 2000,
+    }
 
 
 def test_private_support_can_neutralize_only_target_gene_in_cross_gene_group() -> None:
@@ -309,6 +324,7 @@ def test_typing_plan_carries_private_support_config() -> None:
     config = TypingConfig(
         cross_gene_neutralization_groups="KIR2DS3/KIR2DS5",
         base_top_n=600,
+        gene_base_top_ns="KIR2DL1:1000",
         private_support_genes="KIR2DS3",
         private_support_lambda=10.0,
         private_support_window=50.0,
@@ -327,6 +343,7 @@ def test_typing_plan_carries_private_support_config() -> None:
 
     assert plan.cross_gene_neutralization_groups == "KIR2DS3/KIR2DS5"
     assert plan.base_top_n == 600
+    assert plan.gene_base_top_ns == "KIR2DL1:1000"
     assert plan.private_support_genes == "KIR2DS3"
     assert plan.private_support_lambda == 10.0
     assert plan.private_support_window == 50.0
@@ -341,6 +358,7 @@ def test_typing_plan_carries_private_support_config() -> None:
     assert plan.highest_suffix_tie_break_genes == "KIR2DS4"
     assert plan.samples[0].private_support_genes == "KIR2DS3"
     assert plan.samples[0].base_top_n == 600
+    assert plan.samples[0].gene_base_top_ns == "KIR2DL1:1000"
     assert plan.samples[0].private_support_condition_alleles == "KIR2DS3*00201"
     assert plan.samples[0].private_support_cross_gene_ratio == 0.8
     assert plan.samples[0].private_support_discard_fallback_genes == "KIR2DS3"

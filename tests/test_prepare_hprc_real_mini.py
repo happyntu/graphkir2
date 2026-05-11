@@ -87,5 +87,6 @@ def test_write_manifest_and_build_preset(tmp_path: Path) -> None:
 
     enhanced = build_enhancedgate_preset(preset)
     assert enhanced["benchmark_label"] == "hprc-real-mini-enhancedgate"
-    assert enhanced["allele_base_top_n"] == 1000
+    assert enhanced["allele_base_top_n"] == 600
+    assert enhanced["allele_gene_base_top_ns"] == "KIR2DL1:1000"
     assert enhanced["allele_private_support_genes"] == "KIR2DS3"

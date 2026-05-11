@@ -173,6 +173,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Lower typing top-n for non-target genes; 0 keeps the global top-n.",
     )
     parser.add_argument(
+        "--allele-gene-base-top-ns",
+        default="",
+        help="Comma-separated gene-specific non-target top-n overrides, e.g. `KIR2DL1:1000`.",
+    )
+    parser.add_argument(
         "--allele-cross-gene-neutralization-groups",
         default="",
         help="Comma-separated slash groups to neutralize in cross-gene ambiguous reads, e.g. `KIR2DS3/KIR2DS5`.",
@@ -309,6 +314,7 @@ def entrypoint() -> None:
             ambiguity_neutral_prob=args.allele_ambiguity_neutral_prob,
             select_min_fraction_ratio=args.allele_select_min_fraction_ratio,
             base_top_n=args.allele_base_top_n,
+            gene_base_top_ns=args.allele_gene_base_top_ns,
             cross_gene_neutralization_groups=args.allele_cross_gene_neutralization_groups,
             private_support_genes=args.allele_private_support_genes,
             private_support_lambda=args.allele_private_support_lambda,

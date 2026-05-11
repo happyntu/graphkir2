@@ -45,6 +45,7 @@ class SampleTypingPlan:
     ambiguity_neutral_prob: float
     select_min_fraction_ratio: float
     base_top_n: int
+    gene_base_top_ns: str
     cross_gene_neutralization_groups: str
     private_support_genes: str
     private_support_lambda: float
@@ -72,6 +73,7 @@ class TypingPlan:
     ambiguity_neutral_prob: float
     select_min_fraction_ratio: float
     base_top_n: int
+    gene_base_top_ns: str
     cross_gene_neutralization_groups: str
     private_support_genes: str
     private_support_lambda: float
@@ -100,6 +102,7 @@ class TypingPlan:
             f"ambiguity_neutral_prob={self.ambiguity_neutral_prob}",
             f"select_min_fraction_ratio={self.select_min_fraction_ratio}",
             f"base_top_n={self.base_top_n or '<none>'}",
+            f"gene_base_top_ns={self.gene_base_top_ns or '<none>'}",
             f"cross_gene_neutralization_groups={self.cross_gene_neutralization_groups or '<none>'}",
             f"private_support_genes={self.private_support_genes or '<none>'}",
             f"private_support_lambda={self.private_support_lambda}",
@@ -133,6 +136,7 @@ class TypingPlan:
                     f"  ambiguity_neutral_prob={sample.ambiguity_neutral_prob}",
                     f"  select_min_fraction_ratio={sample.select_min_fraction_ratio}",
                     f"  base_top_n={sample.base_top_n or '<none>'}",
+                    f"  gene_base_top_ns={sample.gene_base_top_ns or '<none>'}",
                     f"  cross_gene_neutralization_groups={sample.cross_gene_neutralization_groups or '<none>'}",
                     f"  private_support_genes={sample.private_support_genes or '<none>'}",
                     f"  private_support_lambda={sample.private_support_lambda}",
@@ -193,6 +197,7 @@ class AlleleTyper:
                     ambiguity_neutral_prob=config.ambiguity_neutral_prob,
                     select_min_fraction_ratio=config.select_min_fraction_ratio,
                     base_top_n=config.base_top_n,
+                    gene_base_top_ns=config.gene_base_top_ns,
                     cross_gene_neutralization_groups=config.cross_gene_neutralization_groups,
                     private_support_genes=config.private_support_genes,
                     private_support_lambda=config.private_support_lambda,
@@ -218,6 +223,7 @@ class AlleleTyper:
             ambiguity_neutral_prob=config.ambiguity_neutral_prob,
             select_min_fraction_ratio=config.select_min_fraction_ratio,
             base_top_n=config.base_top_n,
+            gene_base_top_ns=config.gene_base_top_ns,
             cross_gene_neutralization_groups=config.cross_gene_neutralization_groups,
             private_support_genes=config.private_support_genes,
             private_support_lambda=config.private_support_lambda,

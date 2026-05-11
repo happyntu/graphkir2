@@ -28,6 +28,11 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--gene-base-top-ns",
+        default=None,
+        help="Override config gene-specific non-target top-n values, e.g. `KIR2DL1:1000`.",
+    )
+    parser.add_argument(
         "--neutralize-cross-gene",
         action="store_true",
         help="Set cross-gene ambiguous read target weights to zero before typing.",
@@ -124,6 +129,7 @@ def main() -> None:
         neutralize_cross_gene_reads,
         parse_gene_groups,
         parse_gene_set,
+        parse_gene_top_n_spec,
         parse_name_set,
         private_positive_cross_gene_ratio,
         private_support_score,
@@ -205,12 +211,18 @@ def main() -> None:
         if args.base_top_n is not None
         else run_config.typing.base_top_n
     )
+    gene_base_top_n_spec = (
+        args.gene_base_top_ns
+        if args.gene_base_top_ns is not None
+        else run_config.typing.gene_base_top_ns
+    )
     neutralize_groups = parse_gene_groups(neutralize_group_spec)
     private_support_genes = parse_gene_set(private_support_gene_spec)
     private_support_condition_alleles = parse_name_set(private_support_condition_spec)
     fallback_genes = parse_gene_set(fallback_gene_spec)
     fallback_residual_alleles = parse_name_set(fallback_residual_spec)
     fallback_introduced_alleles = parse_name_set(fallback_introduced_spec)
+    gene_base_top_ns = parse_gene_top_n_spec(gene_base_top_n_spec)
     has_conditional_gate = bool(
         private_support_condition_alleles or private_support_cross_gene_ratio > 0.0
     )
@@ -253,6 +265,7 @@ def main() -> None:
                 args.top_n,
                 base_top_n if base_top_n > 0 else None,
                 high_top_n_genes,
+                gene_base_top_ns,
             )
             model = AlleleTyping(
                 gene_reads[gene],

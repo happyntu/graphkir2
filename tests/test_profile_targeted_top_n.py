@@ -7,6 +7,7 @@ from profile_targeted_top_n import (  # noqa: E402
     ProfileVariant,
     bundle_path,
     build_profile_variants,
+    build_profile_variants_with_gene_overrides,
     parse_time_metrics,
     prediction_path,
     write_tsv,
@@ -37,10 +38,14 @@ def test_build_profile_variants_defaults_and_custom_values() -> None:
     assert build_profile_variants([]) == (
         ProfileVariant("full_top5000", 0),
         ProfileVariant("targeted_base600", 600),
+        ProfileVariant("geneaware_base600_kir2dl1_1000", 600, "KIR2DL1:1000"),
     )
     assert build_profile_variants([0, 1000]) == (
         ProfileVariant("full_top5000", 0),
         ProfileVariant("targeted_base1000", 1000),
+    )
+    assert build_profile_variants_with_gene_overrides([600], ["KIR2DL1:1000"]) == (
+        ProfileVariant("geneaware_base600_kir2dl1_1000", 600, "KIR2DL1:1000"),
     )
 
 
@@ -54,6 +59,7 @@ def test_write_tsv_uses_expected_columns(tmp_path: Path) -> None:
                 "variant": "full_top5000",
                 "top_n": "5000",
                 "base_top_n": "0",
+                "gene_base_top_ns": "",
                 "runtime_seconds": "1.000",
                 "max_rss_mb": "100.0",
                 "three_digit_f1": "1.000000",
@@ -66,6 +72,6 @@ def test_write_tsv_uses_expected_columns(tmp_path: Path) -> None:
     )
 
     assert path.read_text(encoding="utf-8").splitlines() == [
-        "label\tvariant\ttop_n\tbase_top_n\truntime_seconds\tmax_rss_mb\tthree_digit_f1\tfive_digit_f1\tseven_digit_f1\tprediction_tsv\tbundle_dir",
-        "synthetic-x\tfull_top5000\t5000\t0\t1.000\t100.0\t1.000000\t1.000000\t0.900000\tpred.tsv\tbundle",
+        "label\tvariant\ttop_n\tbase_top_n\tgene_base_top_ns\truntime_seconds\tmax_rss_mb\tthree_digit_f1\tfive_digit_f1\tseven_digit_f1\tprediction_tsv\tbundle_dir",
+        "synthetic-x\tfull_top5000\t5000\t0\t\t1.000\t100.0\t1.000000\t1.000000\t0.900000\tpred.tsv\tbundle",
     ]

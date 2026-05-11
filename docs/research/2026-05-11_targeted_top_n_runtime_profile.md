@@ -41,9 +41,13 @@ Setup:
 
 ## Decision
 
-Use `allele_base_top_n = 1000` as the full-gene smoke / real-data sanity OOM
-guard. Keep `allele_base_top_n = 0` for reduced synthetic lead configs so the
-current synthetic benchmark numbers remain comparable to previous runs.
+This first sweep showed that plain `allele_base_top_n = 600` is unsafe and that
+`1000` recovers the observed aggregate accuracy. A follow-up gene-aware profile
+found a better full-gene smoke / real-data sanity guard:
+`allele_base_top_n = 600` plus `allele_gene_base_top_ns = KIR2DL1:1000`.
+
+Keep `allele_base_top_n = 0` for reduced synthetic lead configs so the current
+synthetic benchmark numbers remain comparable to previous runs.
 
 Generated TSV artifacts:
 

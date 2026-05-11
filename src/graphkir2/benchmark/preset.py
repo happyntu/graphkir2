@@ -45,6 +45,7 @@ class BenchmarkPreset:
     allele_ambiguity_neutral_prob: float = 0.999
     allele_select_min_fraction_ratio: float = 0.5
     allele_base_top_n: int = 0
+    allele_gene_base_top_ns: str = ""
     allele_cross_gene_neutralization_groups: str = ""
     allele_private_support_genes: str = ""
     allele_private_support_lambda: float = 0.0
@@ -102,6 +103,7 @@ class BenchmarkPreset:
                 ambiguity_neutral_prob=self.allele_ambiguity_neutral_prob,
                 select_min_fraction_ratio=self.allele_select_min_fraction_ratio,
                 base_top_n=self.allele_base_top_n,
+                gene_base_top_ns=self.allele_gene_base_top_ns,
                 cross_gene_neutralization_groups=self.allele_cross_gene_neutralization_groups,
                 private_support_genes=self.allele_private_support_genes,
                 private_support_lambda=self.allele_private_support_lambda,

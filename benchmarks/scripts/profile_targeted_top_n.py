@@ -26,11 +26,13 @@ class ProfileVariant:
 
     name: str
     base_top_n: int
+    gene_base_top_ns: str = ""
 
 
 PROFILE_VARIANTS = (
     ProfileVariant("full_top5000", 0),
     ProfileVariant("targeted_base600", 600),
+    ProfileVariant("geneaware_base600_kir2dl1_1000", 600, "KIR2DL1:1000"),
 )
 
 
@@ -116,7 +118,16 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help=(
             "Base top-n variants to profile. Repeat for multiple values; "
-            "0 means full top-n. Defaults to 0 and 600."
+            "0 means full top-n. Defaults to full, base600, and gene-aware base600."
+        ),
+    )
+    parser.add_argument(
+        "--gene-base-top-ns",
+        action="append",
+        default=[],
+        help=(
+            "Gene-specific overrides paired by position with --base-top-n; "
+            "use an empty string for no override."
         ),
     )
     parser.add_argument(
@@ -150,6 +161,29 @@ def build_profile_variants(base_top_ns: list[int]) -> tuple[ProfileVariant, ...]
         )
         for base_top_n in base_top_ns
     )
+
+
+def build_profile_variants_with_gene_overrides(
+    base_top_ns: list[int],
+    gene_base_top_specs: list[str],
+) -> tuple[ProfileVariant, ...]:
+    """Build profile variants from base top-n values and optional gene overrides."""
+    if not base_top_ns:
+        return PROFILE_VARIANTS
+    if gene_base_top_specs and len(gene_base_top_specs) != len(base_top_ns):
+        raise ValueError("--gene-base-top-ns must be provided once per --base-top-n")
+    variants: list[ProfileVariant] = []
+    for index, base_top_n in enumerate(base_top_ns):
+        gene_spec = gene_base_top_specs[index] if gene_base_top_specs else ""
+        if base_top_n == 0:
+            name = "full_top5000"
+        elif gene_spec:
+            safe_gene_spec = gene_spec.replace(":", "_").replace(",", "_")
+            name = f"geneaware_base{base_top_n}_{safe_gene_spec.lower()}"
+        else:
+            name = f"targeted_base{base_top_n}"
+        variants.append(ProfileVariant(name, base_top_n, gene_spec))
+    return tuple(variants)
 
 
 def config_for_label(label: str) -> Path:
@@ -195,6 +229,8 @@ def run_profile_variant(
     ]
     if variant.base_top_n:
         rerun_command.extend(["--base-top-n", str(variant.base_top_n)])
+    if variant.gene_base_top_ns:
+        rerun_command.extend(["--gene-base-top-ns", variant.gene_base_top_ns])
     timed = run_timed(rerun_command, repo_root)
     if timed.exit_code != 0:
         raise RuntimeError(
@@ -234,6 +270,7 @@ def run_profile_variant(
         "variant": variant.name,
         "top_n": str(top_n),
         "base_top_n": str(variant.base_top_n),
+        "gene_base_top_ns": variant.gene_base_top_ns,
         "runtime_seconds": f"{timed.runtime_seconds:.3f}",
         "max_rss_mb": "" if timed.max_rss_mb is None else f"{timed.max_rss_mb:.1f}",
         "three_digit_f1": f"{float(metrics['three_digit_f1']):.6f}",
@@ -252,6 +289,7 @@ def write_tsv(path: Path, rows: list[dict[str, str]]) -> None:
         "variant",
         "top_n",
         "base_top_n",
+        "gene_base_top_ns",
         "runtime_seconds",
         "max_rss_mb",
         "three_digit_f1",
@@ -280,7 +318,7 @@ def write_markdown(path: Path, rows: list[dict[str, str]]) -> None:
         "This profiles `rerun_typing_private_support.py` on existing synthetic fixtures.",
         "`full_top5000` keeps every gene at `top_n=5000`; targeted variants keep",
         "the enhancedgate target genes at `top_n=5000` and use lower `base_top_n`",
-        "values for non-target genes.",
+        "values for non-target genes; gene-aware variants override individual genes.",
         "",
         "| panel | variant | runtime s | max RSS MB | 3-digit F1 | 5-digit F1 | 7-digit F1 |",
         "|---|---:|---:|---:|---:|---:|---:|",
@@ -365,7 +403,10 @@ def main() -> None:
     args = build_parser().parse_args()
     repo_root = Path(__file__).resolve().parents[2]
     labels = tuple(args.label) if args.label else DEFAULT_LABELS
-    variants = build_profile_variants(args.base_top_n)
+    variants = build_profile_variants_with_gene_overrides(
+        args.base_top_n,
+        args.gene_base_top_ns,
+    )
     results_dir = Path(args.results_dir)
     rows: list[dict[str, str]] = []
     for label in labels:

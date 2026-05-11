@@ -114,6 +114,12 @@ def build_legacy_graphkir_command(config: GraphKir2RunConfig) -> LegacyCommandPl
             "legacy graphkir CLI has no targeted base top-n flag; "
             "this graphkir2 config represents a refactor-only typing enhancement"
         )
+    if config.typing.gene_base_top_ns:
+        exact_config_match = False
+        notes.append(
+            "legacy graphkir CLI has no gene-aware base top-n flag; "
+            "this graphkir2 config represents a refactor-only typing enhancement"
+        )
     if config.typing.cross_gene_neutralization_groups:
         exact_config_match = False
         notes.append(

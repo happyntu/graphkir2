@@ -9,6 +9,7 @@ from typing import Any
 VariantSupport = defaultdict[str, float]
 GeneGroups = tuple[frozenset[str], ...]
 NameSet = frozenset[str]
+GeneTopN = dict[str, int]
 
 
 def read_pair_name(read: object) -> str:
@@ -51,14 +52,38 @@ def parse_name_set(spec: str) -> NameSet:
     return frozenset(name.strip() for name in spec.split(",") if name.strip())
 
 
+def parse_gene_top_n_spec(spec: str) -> GeneTopN:
+    """Parse comma-separated `GENE:TOPN` overrides."""
+    gene_top_n: GeneTopN = {}
+    for field in spec.split(","):
+        item = field.strip()
+        if not item:
+            continue
+        if ":" not in item:
+            raise ValueError(f"Invalid gene top-n field: {item}")
+        gene, value = (part.strip() for part in item.split(":", 1))
+        if not gene:
+            raise ValueError(f"Invalid empty gene in top-n field: {item}")
+        top_n = int(value)
+        if top_n <= 0:
+            raise ValueError(f"Gene top-n must be positive: {item}")
+        gene_top_n[gene] = top_n
+    return gene_top_n
+
+
 def choose_targeted_top_n(
     gene_name: str,
     top_n: int,
     base_top_n: int | None,
     target_genes: NameSet,
+    gene_base_top_ns: GeneTopN | None = None,
 ) -> int:
     """Use high top-n only for target genes when a lower base top-n is supplied."""
-    if base_top_n is None or gene_name in target_genes:
+    if gene_name in target_genes:
+        return top_n
+    if gene_base_top_ns and gene_name in gene_base_top_ns:
+        return min(top_n, gene_base_top_ns[gene_name])
+    if base_top_n is None:
         return top_n
     return base_top_n
 
