@@ -1,1 +1,1 @@
-# 請遵循CLAUDE.md的規範
+All AI agents working on this repository must follow the rules in CLAUDE.md.
