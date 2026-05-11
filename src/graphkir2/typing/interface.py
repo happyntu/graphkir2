@@ -58,6 +58,10 @@ class SampleTypingPlan:
     private_support_discard_fallback_introduced_max_ratio: float
     private_support_discard_fallback_max_score: float
     private_support_discard_fallback_residual_min_ratio: float
+    functional_discard_fallback_genes: str
+    functional_discard_fallback_resolution: int
+    functional_discard_fallback_max_score: float
+    functional_discard_fallback_min_score_delta: float
     highest_suffix_tie_break_genes: str
 
 
@@ -86,6 +90,10 @@ class TypingPlan:
     private_support_discard_fallback_introduced_max_ratio: float
     private_support_discard_fallback_max_score: float
     private_support_discard_fallback_residual_min_ratio: float
+    functional_discard_fallback_genes: str
+    functional_discard_fallback_resolution: int
+    functional_discard_fallback_max_score: float
+    functional_discard_fallback_min_score_delta: float
     highest_suffix_tie_break_genes: str
     merged_allele_tsv: str
     samples: tuple[SampleTypingPlan, ...]
@@ -115,6 +123,10 @@ class TypingPlan:
             f"private_support_discard_fallback_introduced_max_ratio={self.private_support_discard_fallback_introduced_max_ratio}",
             f"private_support_discard_fallback_max_score={self.private_support_discard_fallback_max_score}",
             f"private_support_discard_fallback_residual_min_ratio={self.private_support_discard_fallback_residual_min_ratio}",
+            f"functional_discard_fallback_genes={self.functional_discard_fallback_genes or '<none>'}",
+            f"functional_discard_fallback_resolution={self.functional_discard_fallback_resolution}",
+            f"functional_discard_fallback_max_score={self.functional_discard_fallback_max_score}",
+            f"functional_discard_fallback_min_score_delta={self.functional_discard_fallback_min_score_delta}",
             f"highest_suffix_tie_break_genes={self.highest_suffix_tie_break_genes or '<none>'}",
             f"merged_allele_tsv={self.merged_allele_tsv}",
             f"samples={len(self.samples)}",
@@ -149,6 +161,10 @@ class TypingPlan:
                     f"  private_support_discard_fallback_introduced_max_ratio={sample.private_support_discard_fallback_introduced_max_ratio}",
                     f"  private_support_discard_fallback_max_score={sample.private_support_discard_fallback_max_score}",
                     f"  private_support_discard_fallback_residual_min_ratio={sample.private_support_discard_fallback_residual_min_ratio}",
+                    f"  functional_discard_fallback_genes={sample.functional_discard_fallback_genes or '<none>'}",
+                    f"  functional_discard_fallback_resolution={sample.functional_discard_fallback_resolution}",
+                    f"  functional_discard_fallback_max_score={sample.functional_discard_fallback_max_score}",
+                    f"  functional_discard_fallback_min_score_delta={sample.functional_discard_fallback_min_score_delta}",
                     f"  highest_suffix_tie_break_genes={sample.highest_suffix_tie_break_genes or '<none>'}",
                 ]
             )
@@ -210,6 +226,10 @@ class AlleleTyper:
                     private_support_discard_fallback_introduced_max_ratio=config.private_support_discard_fallback_introduced_max_ratio,
                     private_support_discard_fallback_max_score=config.private_support_discard_fallback_max_score,
                     private_support_discard_fallback_residual_min_ratio=config.private_support_discard_fallback_residual_min_ratio,
+                    functional_discard_fallback_genes=config.functional_discard_fallback_genes,
+                    functional_discard_fallback_resolution=config.functional_discard_fallback_resolution,
+                    functional_discard_fallback_max_score=config.functional_discard_fallback_max_score,
+                    functional_discard_fallback_min_score_delta=config.functional_discard_fallback_min_score_delta,
                     highest_suffix_tie_break_genes=config.highest_suffix_tie_break_genes,
                 )
             )
@@ -236,6 +256,10 @@ class AlleleTyper:
             private_support_discard_fallback_introduced_max_ratio=config.private_support_discard_fallback_introduced_max_ratio,
             private_support_discard_fallback_max_score=config.private_support_discard_fallback_max_score,
             private_support_discard_fallback_residual_min_ratio=config.private_support_discard_fallback_residual_min_ratio,
+            functional_discard_fallback_genes=config.functional_discard_fallback_genes,
+            functional_discard_fallback_resolution=config.functional_discard_fallback_resolution,
+            functional_discard_fallback_max_score=config.functional_discard_fallback_max_score,
+            functional_discard_fallback_min_score_delta=config.functional_discard_fallback_min_score_delta,
             highest_suffix_tie_break_genes=config.highest_suffix_tie_break_genes,
             merged_allele_tsv=cohort_name + ".allele.tsv",
             samples=tuple(sample_plans),

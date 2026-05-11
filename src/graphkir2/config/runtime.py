@@ -79,6 +79,10 @@ class TypingConfig:
     private_support_discard_fallback_introduced_max_ratio: float = 0.0
     private_support_discard_fallback_max_score: float = 0.0
     private_support_discard_fallback_residual_min_ratio: float = 0.0
+    functional_discard_fallback_genes: str = ""
+    functional_discard_fallback_resolution: int = 3
+    functional_discard_fallback_max_score: float = 0.0
+    functional_discard_fallback_min_score_delta: float = 0.0
     highest_suffix_tie_break_genes: str = ""
 
 

@@ -103,6 +103,29 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional minimum cross-gene ratio for residual-allele fallback.",
     )
+    parser.add_argument(
+        "--functional-discard-fallback-genes",
+        default=None,
+        help="Optional comma-separated genes allowed to use discard evidence for weak functional likelihood calls.",
+    )
+    parser.add_argument(
+        "--functional-discard-fallback-resolution",
+        type=int,
+        default=None,
+        help="Optional allele field length for functional discard fallback comparison.",
+    )
+    parser.add_argument(
+        "--functional-discard-fallback-min-score-delta",
+        type=float,
+        default=None,
+        help="Optional private-support score advantage required for functional discard fallback.",
+    )
+    parser.add_argument(
+        "--functional-discard-fallback-max-score",
+        type=float,
+        default=None,
+        help="Optional maximum selected-call private-support score allowed for functional fallback.",
+    )
     return parser
 
 
@@ -137,6 +160,7 @@ def main() -> None:
         select_with_highest_suffix_tie_break,
         select_with_private_support,
         should_apply_conditional_private_support,
+        should_use_functional_discard_fallback,
         should_use_discard_fallback,
     )
 
@@ -206,6 +230,26 @@ def main() -> None:
         if args.private_support_discard_fallback_residual_min_ratio is not None
         else run_config.typing.private_support_discard_fallback_residual_min_ratio
     )
+    functional_fallback_gene_spec = (
+        args.functional_discard_fallback_genes
+        if args.functional_discard_fallback_genes is not None
+        else run_config.typing.functional_discard_fallback_genes
+    )
+    functional_fallback_resolution = (
+        args.functional_discard_fallback_resolution
+        if args.functional_discard_fallback_resolution is not None
+        else run_config.typing.functional_discard_fallback_resolution
+    )
+    functional_fallback_min_score_delta = (
+        args.functional_discard_fallback_min_score_delta
+        if args.functional_discard_fallback_min_score_delta is not None
+        else run_config.typing.functional_discard_fallback_min_score_delta
+    )
+    functional_fallback_max_score = (
+        args.functional_discard_fallback_max_score
+        if args.functional_discard_fallback_max_score is not None
+        else run_config.typing.functional_discard_fallback_max_score
+    )
     base_top_n = (
         args.base_top_n
         if args.base_top_n is not None
@@ -222,6 +266,7 @@ def main() -> None:
     fallback_genes = parse_gene_set(fallback_gene_spec)
     fallback_residual_alleles = parse_name_set(fallback_residual_spec)
     fallback_introduced_alleles = parse_name_set(fallback_introduced_spec)
+    functional_fallback_genes = parse_gene_set(functional_fallback_gene_spec)
     gene_base_top_ns = parse_gene_top_n_spec(gene_base_top_n_spec)
     has_conditional_gate = bool(
         private_support_condition_alleles or private_support_cross_gene_ratio > 0.0
@@ -386,6 +431,48 @@ def main() -> None:
                         min_fraction_ratio=sample.select_min_fraction_ratio
                     )
                     model = fallback_model
+            if gene_name in functional_fallback_genes:
+                selected_support = private_support_score(
+                    selected,
+                    allele_variants,
+                    positive,
+                    negative,
+                )
+                if selected_support <= functional_fallback_max_score:
+                    discard_reads_data = removeMultipleMapped(deepcopy(raw_reads_data))
+                    discard_gene_reads = groupReads(discard_reads_data["reads"])
+                    if gene in discard_gene_reads:
+                        fallback_model = AlleleTyping(
+                            discard_gene_reads[gene],
+                            gene_variants[gene],
+                            top_n=gene_top_n,
+                            variant_correction=True,
+                            exon_weight=1.0,
+                            ambiguity_likelihood=False,
+                        )
+                        fallback_result = fallback_model.typing(copy_number)
+                        fallback_selected = fallback_result.selectBest(
+                            min_fraction_ratio=sample.select_min_fraction_ratio
+                        )
+                        fallback_positive, fallback_negative = collect_variant_support(
+                            fallback_model.reads
+                        )
+                        fallback_support = private_support_score(
+                            fallback_selected,
+                            allele_variants,
+                            fallback_positive,
+                            fallback_negative,
+                        )
+                        if should_use_functional_discard_fallback(
+                            selected,
+                            fallback_selected,
+                            selected_support,
+                            fallback_support,
+                            functional_fallback_resolution,
+                            functional_fallback_min_score_delta,
+                        ):
+                            selected = fallback_selected
+                            model = fallback_model
             if gene_name in highest_suffix_tie_break_genes:
                 selected = select_with_highest_suffix_tie_break(
                     result,

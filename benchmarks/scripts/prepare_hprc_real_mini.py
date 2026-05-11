@@ -212,6 +212,10 @@ def build_enhancedgate_preset(base_preset: dict[str, object]) -> dict[str, objec
             "allele_private_support_discard_fallback_introduced_max_ratio": 0.885,
             "allele_private_support_discard_fallback_max_score": -20.0,
             "allele_private_support_discard_fallback_residual_min_ratio": 0.7,
+            "allele_functional_discard_fallback_genes": "KIR2DL1",
+            "allele_functional_discard_fallback_resolution": 3,
+            "allele_functional_discard_fallback_max_score": -100.0,
+            "allele_functional_discard_fallback_min_score_delta": 20.0,
             "allele_highest_suffix_tie_break_genes": "KIR2DS4",
         }
     )

@@ -51,6 +51,28 @@ def test_build_typing_command_adds_geneaware_overrides() -> None:
     assert command[-4:] == ["--base-top-n", "600", "--gene-base-top-ns", "KIR2DL1:1000"]
 
 
+def test_build_typing_command_adds_functional_fallback_overrides() -> None:
+    method = [
+        item
+        for item in DEFAULT_METHODS
+        if item.name == "enhancedgate_kir2dl1fallback_geneaware"
+    ][0]
+    paths = paths_for("synthetic-x", method, Path("results"))
+
+    command = build_typing_command(method, paths)
+
+    assert command[-8:] == [
+        "--functional-discard-fallback-genes",
+        "KIR2DL1",
+        "--functional-discard-fallback-resolution",
+        "3",
+        "--functional-discard-fallback-max-score",
+        "-100.0",
+        "--functional-discard-fallback-min-score-delta",
+        "20.0",
+    ]
+
+
 def test_functional_regressions_compares_only_three_and_five_digit() -> None:
     rows = [
         {

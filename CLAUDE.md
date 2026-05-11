@@ -314,24 +314,34 @@ seed panels showed:
 * discard mean: `0.9693 / 0.9643 / 0.8854`
 * likelihood-only top5000 mean: `0.9437 / 0.9426 / 0.8946`
 * enhancedgate gene-aware top-n mean: `0.9866 / 0.9842 / 0.9446`
+* enhancedgate + `KIR2DL1` functional fallback gene-aware mean:
+  `0.9881 / 0.9842 / 0.9461`
 
-However, strict per-gene comparison still shows one functional regression versus
-discard: `synthetic-functional8x6` `KIR2DL1` 3-digit F1 drops from `1.0000` to
-`0.9167` under enhancedgate/gene-aware likelihood. The next method step should
-isolate that `KIR2DL1` ambiguity-likelihood failure while preserving the
-`KIR2DS3`, `KIR2DS4`, and `KIR2DS5` gains. Do not promote enhancedgate as a
-global default until this per-gene functional regression is understood or
-accepted explicitly.
+The `KIR2DL1` fallback candidate enables:
+
+* `allele_functional_discard_fallback_genes = KIR2DL1`
+* `allele_functional_discard_fallback_resolution = 3`
+* `allele_functional_discard_fallback_max_score = -100.0`
+* `allele_functional_discard_fallback_min_score_delta = 20.0`
+
+This fixes the strict `synthetic-functional8x6` `KIR2DL1` 3-digit regression
+versus discard (`0.9167 -> 1.0000`) while preserving the `KIR2DS3`, `KIR2DS4`,
+and `KIR2DS5` gains on difficult panels. KIR2DL1 still has one 5-digit miss
+matching discard's remaining error, so the fallback is a functional regression
+guard rather than a full 5-digit KIR2DL1 solution. Do not promote it as a global
+default until it has real-data sanity coverage.
 
 Operational note: `benchmarks/configs/hprc_real_sanity.json` currently uses
 `examples/cohort.csv`, so it is an examples-format smoke run rather than a valid
 HPRC accuracy benchmark. Use it to verify the full legacy/rerun plumbing only.
 For enhancedgate smoke on that full gene panel, use the committed
 `benchmarks/configs/hprc_real_sanity_enhancedgate.json`; applying top5000 to
-every gene can exceed a 15GB WSL memory limit. Synthetic profiling showed
-plain `base_top_n = 600` can regress `synthetic-functional8x6` KIR2DL1, while
-the gene-aware setting `base_top_n = 600` plus `KIR2DL1:1000` recovered the
-observed aggregate 3/5/7-digit F1 and improved runtime.
+every gene can exceed a 15GB WSL memory limit. The committed enhancedgate sanity
+config includes gene-aware top-n and the `KIR2DL1` functional fallback. Synthetic
+profiling showed plain `base_top_n = 600` can regress
+`synthetic-functional8x6` KIR2DL1, while the gene-aware setting
+`base_top_n = 600` plus `KIR2DL1:1000` recovered the observed aggregate
+3/5/7-digit F1 and improved runtime.
 
 To prepare a real HPRC mini sanity run, use
 `benchmarks/scripts/prepare_hprc_real_mini.py`. It checks
@@ -339,8 +349,9 @@ To prepare a real HPRC mini sanity run, use
 discovers paired FASTQs under `GRAPHKIR_HPRC_FASTQ_ROOTS`,
 `HPRC_FASTQ_ROOT`, or the default local roots, and writes ignored generated
 manifest/config files only when real sample data exists. It writes a baseline
-config and an enhancedgate config with `allele_base_top_n = 600` and
-`allele_gene_base_top_ns = KIR2DL1:1000`. As of
+config and an enhancedgate config with `allele_base_top_n = 600`,
+`allele_gene_base_top_ns = KIR2DL1:1000`, and the `KIR2DL1` functional fallback.
+As of
 2026-05-11, this workspace does not contain local HPRC KIR FASTQs or `data_real`
 intermediates.
 

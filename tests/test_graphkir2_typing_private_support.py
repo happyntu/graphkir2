@@ -21,6 +21,7 @@ from graphkir2.typing.private_support import (
     select_with_highest_suffix_tie_break,
     select_with_private_support,
     should_apply_conditional_private_support,
+    should_use_functional_discard_fallback,
     should_use_discard_fallback,
 )
 
@@ -275,6 +276,33 @@ def test_discard_fallback_detects_residual_and_low_ratio_introduced_calls() -> N
     )
 
 
+def test_functional_discard_fallback_requires_functional_change_and_support_gain() -> None:
+    assert should_use_functional_discard_fallback(
+        ["KIR2DL1*0030205", "KIR2DL1*0040110"],
+        ["KIR2DL1*0030242", "KIR2DL1*00303"],
+        selected_private_support=-140.0,
+        discard_private_support=-19.0,
+        resolution=3,
+        min_score_delta=20.0,
+    )
+    assert not should_use_functional_discard_fallback(
+        ["KIR2DL1*0030205", "KIR2DL1*0040110"],
+        ["KIR2DL1*0030242", "KIR2DL1*00303"],
+        selected_private_support=-30.0,
+        discard_private_support=-19.0,
+        resolution=3,
+        min_score_delta=20.0,
+    )
+    assert not should_use_functional_discard_fallback(
+        ["KIR2DL1*0030205", "KIR2DL1*0030213"],
+        ["KIR2DL1*0030242", "KIR2DL1*00303"],
+        selected_private_support=-140.0,
+        discard_private_support=-19.0,
+        resolution=3,
+        min_score_delta=20.0,
+    )
+
+
 def test_highest_suffix_tie_break_keeps_same_five_digit_call() -> None:
     selected = select_with_highest_suffix_tie_break(
         DummyTieResult(),
@@ -336,6 +364,10 @@ def test_typing_plan_carries_private_support_config() -> None:
         private_support_discard_fallback_introduced_max_ratio=0.9,
         private_support_discard_fallback_max_score=-20.0,
         private_support_discard_fallback_residual_min_ratio=0.7,
+        functional_discard_fallback_genes="KIR2DL1",
+        functional_discard_fallback_resolution=3,
+        functional_discard_fallback_max_score=-100.0,
+        functional_discard_fallback_min_score_delta=20.0,
         highest_suffix_tie_break_genes="KIR2DS4",
     )
 
@@ -355,6 +387,10 @@ def test_typing_plan_carries_private_support_config() -> None:
     assert plan.private_support_discard_fallback_introduced_max_ratio == 0.9
     assert plan.private_support_discard_fallback_max_score == -20.0
     assert plan.private_support_discard_fallback_residual_min_ratio == 0.7
+    assert plan.functional_discard_fallback_genes == "KIR2DL1"
+    assert plan.functional_discard_fallback_resolution == 3
+    assert plan.functional_discard_fallback_max_score == -100.0
+    assert plan.functional_discard_fallback_min_score_delta == 20.0
     assert plan.highest_suffix_tie_break_genes == "KIR2DS4"
     assert plan.samples[0].private_support_genes == "KIR2DS3"
     assert plan.samples[0].base_top_n == 600
@@ -365,4 +401,8 @@ def test_typing_plan_carries_private_support_config() -> None:
     assert plan.samples[0].private_support_discard_fallback_introduced_max_ratio == 0.9
     assert plan.samples[0].private_support_discard_fallback_max_score == -20.0
     assert plan.samples[0].private_support_discard_fallback_residual_min_ratio == 0.7
+    assert plan.samples[0].functional_discard_fallback_genes == "KIR2DL1"
+    assert plan.samples[0].functional_discard_fallback_resolution == 3
+    assert plan.samples[0].functional_discard_fallback_max_score == -100.0
+    assert plan.samples[0].functional_discard_fallback_min_score_delta == 20.0
     assert plan.samples[0].highest_suffix_tie_break_genes == "KIR2DS4"

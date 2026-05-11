@@ -244,6 +244,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="Minimum cross-gene ratio for residual-allele discard fallback unless the base call has an introduced-risk allele.",
     )
     parser.add_argument(
+        "--allele-functional-discard-fallback-genes",
+        default="",
+        help="Comma-separated genes allowed to use discard evidence for weak functional likelihood calls.",
+    )
+    parser.add_argument(
+        "--allele-functional-discard-fallback-resolution",
+        type=int,
+        default=3,
+        help="Allele field length used when comparing functional discard fallback calls.",
+    )
+    parser.add_argument(
+        "--allele-functional-discard-fallback-max-score",
+        type=float,
+        default=0.0,
+        help="Maximum selected-call private-support score allowed to trigger functional discard fallback.",
+    )
+    parser.add_argument(
+        "--allele-functional-discard-fallback-min-score-delta",
+        type=float,
+        default=0.0,
+        help="Minimum private-support score advantage required for functional discard fallback.",
+    )
+    parser.add_argument(
         "--allele-highest-suffix-tie-break-genes",
         default="",
         help="Comma-separated genes where exact likelihood ties keep the highest 7-digit suffix within the same 5-digit call.",
@@ -327,6 +350,10 @@ def entrypoint() -> None:
             private_support_discard_fallback_introduced_max_ratio=args.allele_private_support_discard_fallback_introduced_max_ratio,
             private_support_discard_fallback_max_score=args.allele_private_support_discard_fallback_max_score,
             private_support_discard_fallback_residual_min_ratio=args.allele_private_support_discard_fallback_residual_min_ratio,
+            functional_discard_fallback_genes=args.allele_functional_discard_fallback_genes,
+            functional_discard_fallback_resolution=args.allele_functional_discard_fallback_resolution,
+            functional_discard_fallback_max_score=args.allele_functional_discard_fallback_max_score,
+            functional_discard_fallback_min_score_delta=args.allele_functional_discard_fallback_min_score_delta,
             highest_suffix_tie_break_genes=args.allele_highest_suffix_tie_break_genes,
         ),
         print_plan=args.print_plan,

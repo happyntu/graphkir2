@@ -288,6 +288,34 @@ def should_use_discard_fallback(
     )
 
 
+def _functional_resolution_key(
+    allele_names: list[str],
+    resolution: int,
+) -> tuple[str, ...]:
+    """Build a sorted allele key at one functional resolution."""
+    if not allele_names or any("*" not in allele for allele in allele_names):
+        return ()
+    return tuple(sorted(limit_allele_resolution(allele, resolution) for allele in allele_names))
+
+
+def should_use_functional_discard_fallback(
+    selected: list[str],
+    discard_selected: list[str],
+    selected_private_support: float,
+    discard_private_support: float,
+    resolution: int = 3,
+    min_score_delta: float = 0.0,
+) -> bool:
+    """Use discard evidence when likelihood changes a weak functional call."""
+    selected_key = _functional_resolution_key(selected, resolution)
+    discard_key = _functional_resolution_key(discard_selected, resolution)
+    if not selected_key or not discard_key or len(selected_key) != len(discard_key):
+        return False
+    if selected_key == discard_key:
+        return False
+    return discard_private_support >= selected_private_support + min_score_delta
+
+
 def select_with_private_support(
     result: object,
     allele_variants: dict[str, set[str]],

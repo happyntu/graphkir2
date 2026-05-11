@@ -58,6 +58,10 @@ class BenchmarkPreset:
     allele_private_support_discard_fallback_introduced_max_ratio: float = 0.0
     allele_private_support_discard_fallback_max_score: float = 0.0
     allele_private_support_discard_fallback_residual_min_ratio: float = 0.0
+    allele_functional_discard_fallback_genes: str = ""
+    allele_functional_discard_fallback_resolution: int = 3
+    allele_functional_discard_fallback_max_score: float = 0.0
+    allele_functional_discard_fallback_min_score_delta: float = 0.0
     allele_highest_suffix_tie_break_genes: str = ""
     allele_truth_tsv: str = ""
     cn_truth_tsv: str = ""
@@ -116,6 +120,10 @@ class BenchmarkPreset:
                 private_support_discard_fallback_introduced_max_ratio=self.allele_private_support_discard_fallback_introduced_max_ratio,
                 private_support_discard_fallback_max_score=self.allele_private_support_discard_fallback_max_score,
                 private_support_discard_fallback_residual_min_ratio=self.allele_private_support_discard_fallback_residual_min_ratio,
+                functional_discard_fallback_genes=self.allele_functional_discard_fallback_genes,
+                functional_discard_fallback_resolution=self.allele_functional_discard_fallback_resolution,
+                functional_discard_fallback_max_score=self.allele_functional_discard_fallback_max_score,
+                functional_discard_fallback_min_score_delta=self.allele_functional_discard_fallback_min_score_delta,
                 highest_suffix_tie_break_genes=self.allele_highest_suffix_tie_break_genes,
             ),
         )
