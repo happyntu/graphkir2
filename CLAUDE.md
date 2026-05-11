@@ -543,6 +543,15 @@ As of
 2026-05-11, this workspace does not contain local HPRC KIR FASTQs or `data_real`
 intermediates.
 
+For direct Geny comparison, use
+`benchmarks/scripts/compare_geny_functional.py`. It expects raw Geny output at
+`data/geny_hprc44.txt` by default and truth at
+`data/groundtruth/hprc_summary_v1_2_e.tsv`; if the Geny file is missing it writes
+`benchmarks/results/geny-functional-comparison/missing_inputs.tsv` and an empty
+summary instead of producing misleading metrics. When a graphkir2 prediction TSV
+is available, pass it with `--graphkir-tsv` to evaluate Geny and graphkir2 with
+the same 3/5/7-digit metric implementation.
+
 ## Synthetic-First Workflow
 
 For `graphkir2`, prefer a synthetic-first benchmark and tuning loop:

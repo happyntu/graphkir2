@@ -102,6 +102,12 @@ are not stored in the JSON preset schema.
 * per-sample CN vs cohort CN
 * extraction on vs extraction skipped
 
+Use `benchmarks/scripts/compare_geny_functional.py` for the Geny comparison
+adapter. It normalizes raw Geny output (`data/geny_hprc44.txt` by default) into
+the graphkir allele TSV format, evaluates it with the same 3/5/7-digit evaluator
+used by `run_compare.py`, and writes an explicit missing-input report when the
+raw Geny file is not present.
+
 ## Metrics
 
 ### Functional metrics
