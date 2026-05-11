@@ -19,6 +19,7 @@ from graphkir2.typing.private_support import (
     select_with_highest_suffix_tie_break,
     select_with_private_support,
     should_apply_conditional_private_support,
+    should_use_discard_fallback,
 )
 
 
@@ -192,6 +193,33 @@ def test_conditional_private_support_uses_cross_gene_ratio_gate() -> None:
     )
 
 
+def test_discard_fallback_detects_residual_and_low_ratio_introduced_calls() -> None:
+    assert should_use_discard_fallback(
+        ["KIR2DS3*0010311", "KIR2DS3*0020101"],
+        ["KIR2DS3*0010311", "KIR2DS3*0020101"],
+        parse_name_set("KIR2DS3*00201"),
+        parse_name_set("KIR2DS3*00103"),
+        cross_gene_ratio=0.81,
+        introduced_max_cross_gene_ratio=0.90,
+    )
+    assert should_use_discard_fallback(
+        ["KIR2DS3*012", "KIR2DS3*0010301"],
+        ["KIR2DS3*012", "KIR2DS3*00108"],
+        parse_name_set("KIR2DS3*00201"),
+        parse_name_set("KIR2DS3*00103"),
+        cross_gene_ratio=0.88,
+        introduced_max_cross_gene_ratio=0.90,
+    )
+    assert not should_use_discard_fallback(
+        ["KIR2DS3*0011201", "KIR2DS3*0010301"],
+        ["KIR2DS3*0011201", "KIR2DS3*0020101"],
+        parse_name_set("KIR2DS3*00201"),
+        parse_name_set("KIR2DS3*00103"),
+        cross_gene_ratio=0.91,
+        introduced_max_cross_gene_ratio=0.90,
+    )
+
+
 def test_highest_suffix_tie_break_keeps_same_five_digit_call() -> None:
     selected = select_with_highest_suffix_tie_break(
         DummyTieResult(),
@@ -245,6 +273,10 @@ def test_typing_plan_carries_private_support_config() -> None:
         private_support_window=50.0,
         private_support_condition_alleles="KIR2DS3*00201",
         private_support_cross_gene_ratio=0.8,
+        private_support_discard_fallback_genes="KIR2DS3",
+        private_support_discard_fallback_residual_alleles="KIR2DS3*00201",
+        private_support_discard_fallback_introduced_alleles="KIR2DS3*00103",
+        private_support_discard_fallback_introduced_max_ratio=0.9,
         highest_suffix_tie_break_genes="KIR2DS4",
     )
 
@@ -256,8 +288,14 @@ def test_typing_plan_carries_private_support_config() -> None:
     assert plan.private_support_window == 50.0
     assert plan.private_support_condition_alleles == "KIR2DS3*00201"
     assert plan.private_support_cross_gene_ratio == 0.8
+    assert plan.private_support_discard_fallback_genes == "KIR2DS3"
+    assert plan.private_support_discard_fallback_residual_alleles == "KIR2DS3*00201"
+    assert plan.private_support_discard_fallback_introduced_alleles == "KIR2DS3*00103"
+    assert plan.private_support_discard_fallback_introduced_max_ratio == 0.9
     assert plan.highest_suffix_tie_break_genes == "KIR2DS4"
     assert plan.samples[0].private_support_genes == "KIR2DS3"
     assert plan.samples[0].private_support_condition_alleles == "KIR2DS3*00201"
     assert plan.samples[0].private_support_cross_gene_ratio == 0.8
+    assert plan.samples[0].private_support_discard_fallback_genes == "KIR2DS3"
+    assert plan.samples[0].private_support_discard_fallback_introduced_max_ratio == 0.9
     assert plan.samples[0].highest_suffix_tie_break_genes == "KIR2DS4"

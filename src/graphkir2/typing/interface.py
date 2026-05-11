@@ -50,6 +50,10 @@ class SampleTypingPlan:
     private_support_window: float
     private_support_condition_alleles: str
     private_support_cross_gene_ratio: float
+    private_support_discard_fallback_genes: str
+    private_support_discard_fallback_residual_alleles: str
+    private_support_discard_fallback_introduced_alleles: str
+    private_support_discard_fallback_introduced_max_ratio: float
     highest_suffix_tie_break_genes: str
 
 
@@ -70,6 +74,10 @@ class TypingPlan:
     private_support_window: float
     private_support_condition_alleles: str
     private_support_cross_gene_ratio: float
+    private_support_discard_fallback_genes: str
+    private_support_discard_fallback_residual_alleles: str
+    private_support_discard_fallback_introduced_alleles: str
+    private_support_discard_fallback_introduced_max_ratio: float
     highest_suffix_tie_break_genes: str
     merged_allele_tsv: str
     samples: tuple[SampleTypingPlan, ...]
@@ -91,6 +99,10 @@ class TypingPlan:
             f"private_support_window={self.private_support_window}",
             f"private_support_condition_alleles={self.private_support_condition_alleles or '<none>'}",
             f"private_support_cross_gene_ratio={self.private_support_cross_gene_ratio}",
+            f"private_support_discard_fallback_genes={self.private_support_discard_fallback_genes or '<none>'}",
+            f"private_support_discard_fallback_residual_alleles={self.private_support_discard_fallback_residual_alleles or '<none>'}",
+            f"private_support_discard_fallback_introduced_alleles={self.private_support_discard_fallback_introduced_alleles or '<none>'}",
+            f"private_support_discard_fallback_introduced_max_ratio={self.private_support_discard_fallback_introduced_max_ratio}",
             f"highest_suffix_tie_break_genes={self.highest_suffix_tie_break_genes or '<none>'}",
             f"merged_allele_tsv={self.merged_allele_tsv}",
             f"samples={len(self.samples)}",
@@ -117,6 +129,10 @@ class TypingPlan:
                     f"  private_support_window={sample.private_support_window}",
                     f"  private_support_condition_alleles={sample.private_support_condition_alleles or '<none>'}",
                     f"  private_support_cross_gene_ratio={sample.private_support_cross_gene_ratio}",
+                    f"  private_support_discard_fallback_genes={sample.private_support_discard_fallback_genes or '<none>'}",
+                    f"  private_support_discard_fallback_residual_alleles={sample.private_support_discard_fallback_residual_alleles or '<none>'}",
+                    f"  private_support_discard_fallback_introduced_alleles={sample.private_support_discard_fallback_introduced_alleles or '<none>'}",
+                    f"  private_support_discard_fallback_introduced_max_ratio={sample.private_support_discard_fallback_introduced_max_ratio}",
                     f"  highest_suffix_tie_break_genes={sample.highest_suffix_tie_break_genes or '<none>'}",
                 ]
             )
@@ -170,6 +186,10 @@ class AlleleTyper:
                     private_support_window=config.private_support_window,
                     private_support_condition_alleles=config.private_support_condition_alleles,
                     private_support_cross_gene_ratio=config.private_support_cross_gene_ratio,
+                    private_support_discard_fallback_genes=config.private_support_discard_fallback_genes,
+                    private_support_discard_fallback_residual_alleles=config.private_support_discard_fallback_residual_alleles,
+                    private_support_discard_fallback_introduced_alleles=config.private_support_discard_fallback_introduced_alleles,
+                    private_support_discard_fallback_introduced_max_ratio=config.private_support_discard_fallback_introduced_max_ratio,
                     highest_suffix_tie_break_genes=config.highest_suffix_tie_break_genes,
                 )
             )
@@ -188,6 +208,10 @@ class AlleleTyper:
             private_support_window=config.private_support_window,
             private_support_condition_alleles=config.private_support_condition_alleles,
             private_support_cross_gene_ratio=config.private_support_cross_gene_ratio,
+            private_support_discard_fallback_genes=config.private_support_discard_fallback_genes,
+            private_support_discard_fallback_residual_alleles=config.private_support_discard_fallback_residual_alleles,
+            private_support_discard_fallback_introduced_alleles=config.private_support_discard_fallback_introduced_alleles,
+            private_support_discard_fallback_introduced_max_ratio=config.private_support_discard_fallback_introduced_max_ratio,
             highest_suffix_tie_break_genes=config.highest_suffix_tie_break_genes,
             merged_allele_tsv=cohort_name + ".allele.tsv",
             samples=tuple(sample_plans),

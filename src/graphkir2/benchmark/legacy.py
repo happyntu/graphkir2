@@ -120,6 +120,10 @@ def build_legacy_graphkir_command(config: GraphKir2RunConfig) -> LegacyCommandPl
         or config.typing.private_support_window != 0.0
         or config.typing.private_support_condition_alleles
         or config.typing.private_support_cross_gene_ratio != 0.0
+        or config.typing.private_support_discard_fallback_genes
+        or config.typing.private_support_discard_fallback_residual_alleles
+        or config.typing.private_support_discard_fallback_introduced_alleles
+        or config.typing.private_support_discard_fallback_introduced_max_ratio != 0.0
     ):
         exact_config_match = False
         notes.append(

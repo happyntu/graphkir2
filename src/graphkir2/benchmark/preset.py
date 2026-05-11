@@ -50,6 +50,10 @@ class BenchmarkPreset:
     allele_private_support_window: float = 0.0
     allele_private_support_condition_alleles: str = ""
     allele_private_support_cross_gene_ratio: float = 0.0
+    allele_private_support_discard_fallback_genes: str = ""
+    allele_private_support_discard_fallback_residual_alleles: str = ""
+    allele_private_support_discard_fallback_introduced_alleles: str = ""
+    allele_private_support_discard_fallback_introduced_max_ratio: float = 0.0
     allele_highest_suffix_tie_break_genes: str = ""
     allele_truth_tsv: str = ""
     cn_truth_tsv: str = ""
@@ -100,6 +104,10 @@ class BenchmarkPreset:
                 private_support_window=self.allele_private_support_window,
                 private_support_condition_alleles=self.allele_private_support_condition_alleles,
                 private_support_cross_gene_ratio=self.allele_private_support_cross_gene_ratio,
+                private_support_discard_fallback_genes=self.allele_private_support_discard_fallback_genes,
+                private_support_discard_fallback_residual_alleles=self.allele_private_support_discard_fallback_residual_alleles,
+                private_support_discard_fallback_introduced_alleles=self.allele_private_support_discard_fallback_introduced_alleles,
+                private_support_discard_fallback_introduced_max_ratio=self.allele_private_support_discard_fallback_introduced_max_ratio,
                 highest_suffix_tie_break_genes=self.allele_highest_suffix_tie_break_genes,
             ),
         )

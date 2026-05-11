@@ -71,6 +71,10 @@ class TypingConfig:
     private_support_window: float = 0.0
     private_support_condition_alleles: str = ""
     private_support_cross_gene_ratio: float = 0.0
+    private_support_discard_fallback_genes: str = ""
+    private_support_discard_fallback_residual_alleles: str = ""
+    private_support_discard_fallback_introduced_alleles: str = ""
+    private_support_discard_fallback_introduced_max_ratio: float = 0.0
     highest_suffix_tie_break_genes: str = ""
 
 

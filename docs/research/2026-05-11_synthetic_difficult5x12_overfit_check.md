@@ -145,13 +145,17 @@ are:
 * sample `11`: discard correct, conditional rescue introduces
   `KIR2DS3*00103`
 
-Tested a second gate that falls back to discard-style `KIR2DS3` evidence only
-when the first ratio gate already fired and one of these residual-risk patterns
-is present:
+Tested and then formalized a second gate that falls back to discard-style
+`KIR2DS3` evidence only when the first ratio gate already fired and one of
+these residual-risk patterns is present:
 
 * conditional call still contains `KIR2DS3*00201`
 * conditional rescue introduces `KIR2DS3*00103` when the base likelihood call
   did not have `00103`, and the cross-support ratio is `< 0.90`
+
+The formalized implementation recomputes the target gene inside
+`rerun_typing_private_support.py` with `removeMultipleMapped` evidence rather
+than reading an external discard prediction table.
 
 Results:
 
@@ -167,5 +171,7 @@ Interpretation:
 * this is the best current synthetic result for the difficult panels
 * it beats the discard baseline on `synthetic-difficult5x12`
 * it does not regress the existing functional panels tested here
-* it is still an ablation, not a default, because the fallback requires
-  discard-style evidence in addition to the likelihood/conditional pass
+* it is now reproducible through the
+  `benchmarks/configs/*-conditional-kir2ds3-secondgate.json` presets
+* it should remain a targeted synthetic candidate, not the global default,
+  until broader seeds and real-data sanity panels are checked

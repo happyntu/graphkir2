@@ -200,6 +200,27 @@ def build_parser() -> argparse.ArgumentParser:
         help="Minimum cross-gene share of selected-private positive support before rescue.",
     )
     parser.add_argument(
+        "--allele-private-support-discard-fallback-genes",
+        default="",
+        help="Comma-separated genes allowed to fall back to discard-style typing after rescue.",
+    )
+    parser.add_argument(
+        "--allele-private-support-discard-fallback-residual-alleles",
+        default="",
+        help="Allele prefixes that trigger discard fallback if still present after rescue.",
+    )
+    parser.add_argument(
+        "--allele-private-support-discard-fallback-introduced-alleles",
+        default="",
+        help="Allele prefixes that trigger fallback if introduced by rescue.",
+    )
+    parser.add_argument(
+        "--allele-private-support-discard-fallback-introduced-max-ratio",
+        type=float,
+        default=0.0,
+        help="Maximum cross-gene ratio for introduced-allele discard fallback.",
+    )
+    parser.add_argument(
         "--allele-highest-suffix-tie-break-genes",
         default="",
         help="Comma-separated genes where exact likelihood ties keep the highest 7-digit suffix within the same 5-digit call.",
@@ -275,6 +296,10 @@ def entrypoint() -> None:
             private_support_window=args.allele_private_support_window,
             private_support_condition_alleles=args.allele_private_support_condition_alleles,
             private_support_cross_gene_ratio=args.allele_private_support_cross_gene_ratio,
+            private_support_discard_fallback_genes=args.allele_private_support_discard_fallback_genes,
+            private_support_discard_fallback_residual_alleles=args.allele_private_support_discard_fallback_residual_alleles,
+            private_support_discard_fallback_introduced_alleles=args.allele_private_support_discard_fallback_introduced_alleles,
+            private_support_discard_fallback_introduced_max_ratio=args.allele_private_support_discard_fallback_introduced_max_ratio,
             highest_suffix_tie_break_genes=args.allele_highest_suffix_tie_break_genes,
         ),
         print_plan=args.print_plan,

@@ -48,6 +48,7 @@ class BenchmarkSummary:
                 f"typing_private_support_genes={self.typing.private_support_genes or '<none>'}",
                 f"typing_private_support_condition_alleles={self.typing.private_support_condition_alleles or '<none>'}",
                 f"typing_private_support_cross_gene_ratio={self.typing.private_support_cross_gene_ratio}",
+                f"typing_private_support_discard_fallback_genes={self.typing.private_support_discard_fallback_genes or '<none>'}",
                 f"merged_cn={self.copy_number.cohort.merged_cn_tsv}",
                 f"merged_alleles={self.typing.merged_allele_tsv}",
             ]
@@ -83,6 +84,7 @@ class ComparisonSummary:
                 f"typing_private_support_genes={self.benchmark.typing.private_support_genes or '<none>'}",
                 f"typing_private_support_condition_alleles={self.benchmark.typing.private_support_condition_alleles or '<none>'}",
                 f"typing_private_support_cross_gene_ratio={self.benchmark.typing.private_support_cross_gene_ratio}",
+                f"typing_private_support_discard_fallback_genes={self.benchmark.typing.private_support_discard_fallback_genes or '<none>'}",
                 f"graphkir2_cn={self.benchmark.copy_number.cohort.merged_cn_tsv}",
                 f"graphkir2_alleles={self.benchmark.typing.merged_allele_tsv}",
             ]

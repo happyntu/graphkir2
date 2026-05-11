@@ -212,6 +212,33 @@ def should_apply_conditional_private_support(
     return ratio >= min_cross_gene_ratio
 
 
+def should_use_discard_fallback(
+    selected: list[str],
+    base_selected: list[str],
+    residual_alleles: NameSet,
+    introduced_alleles: NameSet,
+    cross_gene_ratio: float,
+    introduced_max_cross_gene_ratio: float,
+) -> bool:
+    """Decide whether a rescued call should fall back to discard-style evidence."""
+    if residual_alleles and selected_has_name_prefix(selected, residual_alleles):
+        return True
+    if not introduced_alleles:
+        return False
+    introduced = any(
+        allele.startswith(prefix)
+        and not any(base_allele.startswith(prefix) for base_allele in base_selected)
+        for allele in selected
+        for prefix in introduced_alleles
+    )
+    if not introduced:
+        return False
+    return (
+        introduced_max_cross_gene_ratio <= 0.0
+        or cross_gene_ratio < introduced_max_cross_gene_ratio
+    )
+
+
 def select_with_private_support(
     result: object,
     allele_variants: dict[str, set[str]],

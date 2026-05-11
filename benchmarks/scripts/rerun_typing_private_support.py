@@ -56,6 +56,27 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional minimum cross-gene ratio for selected-private positive support.",
     )
+    parser.add_argument(
+        "--private-support-discard-fallback-genes",
+        default=None,
+        help="Optional comma-separated genes allowed to use discard-style fallback.",
+    )
+    parser.add_argument(
+        "--private-support-discard-fallback-residual-alleles",
+        default=None,
+        help="Optional allele prefixes that trigger fallback if still present after rescue.",
+    )
+    parser.add_argument(
+        "--private-support-discard-fallback-introduced-alleles",
+        default=None,
+        help="Optional allele prefixes that trigger fallback if introduced by rescue.",
+    )
+    parser.add_argument(
+        "--private-support-discard-fallback-introduced-max-ratio",
+        type=float,
+        default=None,
+        help="Optional maximum cross-gene ratio for introduced-allele fallback.",
+    )
     return parser
 
 
@@ -64,7 +85,7 @@ def main() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     sys.path.insert(0, str(repo_root / "src"))
 
-    from graphkir.hisat2 import loadReadsAndVariantsData
+    from graphkir.hisat2 import loadReadsAndVariantsData, removeMultipleMapped
     from graphkir.kir_cn import loadCN
     from graphkir.kir_typing import (
         TypingWithPosNegAllele,
@@ -82,10 +103,12 @@ def main() -> None:
         parse_gene_groups,
         parse_gene_set,
         parse_name_set,
+        private_positive_cross_gene_ratio,
         pure_gene,
         select_with_highest_suffix_tie_break,
         select_with_private_support,
         should_apply_conditional_private_support,
+        should_use_discard_fallback,
     )
 
     args = build_parser().parse_args()
@@ -124,9 +147,32 @@ def main() -> None:
         if args.private_support_cross_gene_ratio is not None
         else run_config.typing.private_support_cross_gene_ratio
     )
+    fallback_gene_spec = (
+        args.private_support_discard_fallback_genes
+        if args.private_support_discard_fallback_genes is not None
+        else run_config.typing.private_support_discard_fallback_genes
+    )
+    fallback_residual_spec = (
+        args.private_support_discard_fallback_residual_alleles
+        if args.private_support_discard_fallback_residual_alleles is not None
+        else run_config.typing.private_support_discard_fallback_residual_alleles
+    )
+    fallback_introduced_spec = (
+        args.private_support_discard_fallback_introduced_alleles
+        if args.private_support_discard_fallback_introduced_alleles is not None
+        else run_config.typing.private_support_discard_fallback_introduced_alleles
+    )
+    fallback_introduced_max_ratio = (
+        args.private_support_discard_fallback_introduced_max_ratio
+        if args.private_support_discard_fallback_introduced_max_ratio is not None
+        else run_config.typing.private_support_discard_fallback_introduced_max_ratio
+    )
     neutralize_groups = parse_gene_groups(neutralize_group_spec)
     private_support_genes = parse_gene_set(private_support_gene_spec)
     private_support_condition_alleles = parse_name_set(private_support_condition_spec)
+    fallback_genes = parse_gene_set(fallback_gene_spec)
+    fallback_residual_alleles = parse_name_set(fallback_residual_spec)
+    fallback_introduced_alleles = parse_name_set(fallback_introduced_spec)
     has_conditional_gate = bool(
         private_support_condition_alleles or private_support_cross_gene_ratio > 0.0
     )
@@ -136,7 +182,8 @@ def main() -> None:
 
     rows: list[dict[str, str]] = []
     for sample in plan.samples:
-        reads_data = likelihoodAmbiguousMapped(loadReadsAndVariantsData(sample.variant_json))
+        raw_reads_data = loadReadsAndVariantsData(sample.variant_json)
+        reads_data = likelihoodAmbiguousMapped(deepcopy(raw_reads_data))
         if (args.neutralize_cross_gene or neutralize_groups) and not has_conditional_gate:
             neutralize_cross_gene_reads(
                 reads_data["reads"],
@@ -178,15 +225,24 @@ def main() -> None:
             }
             gene_name = pure_gene(gene)
             support_lambda = private_support_lambda
+            selected_without_rescue = result.selectBest(
+                min_fraction_ratio=sample.select_min_fraction_ratio
+            )
+            applied_conditional_rescue = False
+            conditional_cross_gene_ratio = 0.0
             if private_support_genes and gene_name not in private_support_genes:
                 support_lambda = 0.0
             if support_lambda and (
                 private_support_condition_alleles
                 or private_support_cross_gene_ratio > 0.0
             ):
-                selected_without_rescue = result.selectBest(
-                    min_fraction_ratio=sample.select_min_fraction_ratio
-                )
+                if private_support_cross_gene_ratio > 0.0:
+                    conditional_cross_gene_ratio = private_positive_cross_gene_ratio(
+                        reads_data["reads"],
+                        selected_without_rescue,
+                        allele_variants,
+                        neutralize_groups,
+                    )
                 should_rescue = should_apply_conditional_private_support(
                     selected_without_rescue,
                     reads_data["reads"],
@@ -196,6 +252,7 @@ def main() -> None:
                     private_support_cross_gene_ratio,
                 )
                 if should_rescue and neutralize_groups:
+                    applied_conditional_rescue = True
                     rescue_reads_data = deepcopy(reads_data["reads"])
                     neutralize_cross_gene_reads(
                         rescue_reads_data,
@@ -233,6 +290,34 @@ def main() -> None:
                 private_support_window,
                 sample.select_min_fraction_ratio,
             )
+            if (
+                applied_conditional_rescue
+                and gene_name in fallback_genes
+                and should_use_discard_fallback(
+                    selected,
+                    selected_without_rescue,
+                    fallback_residual_alleles,
+                    fallback_introduced_alleles,
+                    conditional_cross_gene_ratio,
+                    fallback_introduced_max_ratio,
+                )
+            ):
+                discard_reads_data = removeMultipleMapped(deepcopy(raw_reads_data))
+                discard_gene_reads = groupReads(discard_reads_data["reads"])
+                if gene in discard_gene_reads:
+                    fallback_model = AlleleTyping(
+                        discard_gene_reads[gene],
+                        gene_variants[gene],
+                        top_n=args.top_n,
+                        variant_correction=True,
+                        exon_weight=1.0,
+                        ambiguity_likelihood=False,
+                    )
+                    fallback_result = fallback_model.typing(copy_number)
+                    selected = fallback_result.selectBest(
+                        min_fraction_ratio=sample.select_min_fraction_ratio
+                    )
+                    model = fallback_model
             if gene_name in highest_suffix_tie_break_genes:
                 selected = select_with_highest_suffix_tie_break(
                     result,
