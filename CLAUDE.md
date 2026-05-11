@@ -263,7 +263,7 @@ current targeted synthetic candidate, not the global default, until it is tested
 on broader synthetic seeds and real-data sanity panels.
 
 Broader synthetic seed validation on `synthetic-difficult5x12-seed5101`,
-`seed5102`, and `seed5103` shows this candidate is not robust enough:
+`seed5102`, and `seed5103` showed the original secondgate was not robust enough:
 
 * discard mean: `0.9583 / 0.9528 / 0.9000`
 * ratio080 mean: `0.9667 / 0.9611 / 0.9361`
@@ -278,6 +278,30 @@ However, `KIR2DS3` functional accuracy regresses versus discard:
 Do not move this method to real-data sanity yet. Next method work must recover
 `KIR2DS3` 3/5-digit robustness across seeds while preserving the whole-panel
 `7-digit` gain.
+
+The current improved candidate is `enhancedgate`, represented by
+`benchmarks/configs/*-conditional-kir2ds3-enhancedgate.json`. It adds two
+protections on top of secondgate:
+
+* fallback requires base private-support score `<= -20.0`
+* residual `KIR2DS3*00201` fallback requires cross-support ratio `>= 0.70`,
+  unless the base call already contains the introduced-risk `KIR2DS3*00103`
+
+Across the original `synthetic-difficult5x12` plus `seed5101/5102/5103`, the
+current means are:
+
+* discard mean: `0.9604 / 0.9542 / 0.9062`
+* ratio080 mean: `0.9646 / 0.9604 / 0.9354`
+* secondgate mean: `0.9667 / 0.9625 / 0.9396`
+* enhancedgate mean: `0.9792 / 0.9750 / 0.9500`
+
+`KIR2DS3` means over the same four panels are:
+
+* discard `KIR2DS3`: `0.9583 / 0.9271 / 0.9271`
+* enhancedgate `KIR2DS3`: `0.9896 / 0.9688 / 0.9375`
+
+Treat enhancedgate as the current synthetic lead. The next validation step is a
+small real-data sanity panel, not broad real-data benchmarking.
 
 ## Synthetic-First Workflow
 

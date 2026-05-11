@@ -201,6 +201,9 @@ def test_discard_fallback_detects_residual_and_low_ratio_introduced_calls() -> N
         parse_name_set("KIR2DS3*00103"),
         cross_gene_ratio=0.81,
         introduced_max_cross_gene_ratio=0.90,
+        private_support=-30.0,
+        max_private_support=-20.0,
+        residual_min_cross_gene_ratio=0.70,
     )
     assert should_use_discard_fallback(
         ["KIR2DS3*012", "KIR2DS3*0010301"],
@@ -209,6 +212,9 @@ def test_discard_fallback_detects_residual_and_low_ratio_introduced_calls() -> N
         parse_name_set("KIR2DS3*00103"),
         cross_gene_ratio=0.88,
         introduced_max_cross_gene_ratio=0.90,
+        private_support=-30.0,
+        max_private_support=-20.0,
+        residual_min_cross_gene_ratio=0.70,
     )
     assert not should_use_discard_fallback(
         ["KIR2DS3*0011201", "KIR2DS3*0010301"],
@@ -217,6 +223,31 @@ def test_discard_fallback_detects_residual_and_low_ratio_introduced_calls() -> N
         parse_name_set("KIR2DS3*00103"),
         cross_gene_ratio=0.91,
         introduced_max_cross_gene_ratio=0.90,
+        private_support=-30.0,
+        max_private_support=-20.0,
+        residual_min_cross_gene_ratio=0.70,
+    )
+    assert not should_use_discard_fallback(
+        ["KIR2DS3*0010311", "KIR2DS3*0020101"],
+        ["KIR2DS3*0010311", "KIR2DS3*0020101"],
+        parse_name_set("KIR2DS3*00201"),
+        parse_name_set("KIR2DS3*00103"),
+        cross_gene_ratio=0.81,
+        introduced_max_cross_gene_ratio=0.90,
+        private_support=10.0,
+        max_private_support=-20.0,
+        residual_min_cross_gene_ratio=0.70,
+    )
+    assert not should_use_discard_fallback(
+        ["KIR2DS3*011", "KIR2DS3*0020101"],
+        ["KIR2DS3*011", "KIR2DS3*0020101"],
+        parse_name_set("KIR2DS3*00201"),
+        parse_name_set("KIR2DS3*00103"),
+        cross_gene_ratio=0.61,
+        introduced_max_cross_gene_ratio=0.90,
+        private_support=-30.0,
+        max_private_support=-20.0,
+        residual_min_cross_gene_ratio=0.70,
     )
 
 
@@ -277,6 +308,8 @@ def test_typing_plan_carries_private_support_config() -> None:
         private_support_discard_fallback_residual_alleles="KIR2DS3*00201",
         private_support_discard_fallback_introduced_alleles="KIR2DS3*00103",
         private_support_discard_fallback_introduced_max_ratio=0.9,
+        private_support_discard_fallback_max_score=-20.0,
+        private_support_discard_fallback_residual_min_ratio=0.7,
         highest_suffix_tie_break_genes="KIR2DS4",
     )
 
@@ -292,10 +325,14 @@ def test_typing_plan_carries_private_support_config() -> None:
     assert plan.private_support_discard_fallback_residual_alleles == "KIR2DS3*00201"
     assert plan.private_support_discard_fallback_introduced_alleles == "KIR2DS3*00103"
     assert plan.private_support_discard_fallback_introduced_max_ratio == 0.9
+    assert plan.private_support_discard_fallback_max_score == -20.0
+    assert plan.private_support_discard_fallback_residual_min_ratio == 0.7
     assert plan.highest_suffix_tie_break_genes == "KIR2DS4"
     assert plan.samples[0].private_support_genes == "KIR2DS3"
     assert plan.samples[0].private_support_condition_alleles == "KIR2DS3*00201"
     assert plan.samples[0].private_support_cross_gene_ratio == 0.8
     assert plan.samples[0].private_support_discard_fallback_genes == "KIR2DS3"
     assert plan.samples[0].private_support_discard_fallback_introduced_max_ratio == 0.9
+    assert plan.samples[0].private_support_discard_fallback_max_score == -20.0
+    assert plan.samples[0].private_support_discard_fallback_residual_min_ratio == 0.7
     assert plan.samples[0].highest_suffix_tie_break_genes == "KIR2DS4"

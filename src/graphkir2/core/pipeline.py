@@ -115,6 +115,8 @@ class GraphKir2Pipeline:
                 f"typing_private_support_discard_fallback_residual_alleles={self.config.typing.private_support_discard_fallback_residual_alleles or '<none>'}",
                 f"typing_private_support_discard_fallback_introduced_alleles={self.config.typing.private_support_discard_fallback_introduced_alleles or '<none>'}",
                 f"typing_private_support_discard_fallback_introduced_max_ratio={self.config.typing.private_support_discard_fallback_introduced_max_ratio}",
+                f"typing_private_support_discard_fallback_max_score={self.config.typing.private_support_discard_fallback_max_score}",
+                f"typing_private_support_discard_fallback_residual_min_ratio={self.config.typing.private_support_discard_fallback_residual_min_ratio}",
                 f"typing_highest_suffix_tie_break_genes={self.config.typing.highest_suffix_tie_break_genes or '<none>'}",
                 f"diploid_gene={self.config.copy_number.diploid_gene or '<none>'}",
                 f"cohort_mode={self.config.copy_number.cohort_mode}",

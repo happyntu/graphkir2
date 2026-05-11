@@ -221,6 +221,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Maximum cross-gene ratio for introduced-allele discard fallback.",
     )
     parser.add_argument(
+        "--allele-private-support-discard-fallback-max-score",
+        type=float,
+        default=0.0,
+        help="Maximum base private-support score still allowed to trigger discard fallback.",
+    )
+    parser.add_argument(
+        "--allele-private-support-discard-fallback-residual-min-ratio",
+        type=float,
+        default=0.0,
+        help="Minimum cross-gene ratio for residual-allele discard fallback unless the base call has an introduced-risk allele.",
+    )
+    parser.add_argument(
         "--allele-highest-suffix-tie-break-genes",
         default="",
         help="Comma-separated genes where exact likelihood ties keep the highest 7-digit suffix within the same 5-digit call.",
@@ -300,6 +312,8 @@ def entrypoint() -> None:
             private_support_discard_fallback_residual_alleles=args.allele_private_support_discard_fallback_residual_alleles,
             private_support_discard_fallback_introduced_alleles=args.allele_private_support_discard_fallback_introduced_alleles,
             private_support_discard_fallback_introduced_max_ratio=args.allele_private_support_discard_fallback_introduced_max_ratio,
+            private_support_discard_fallback_max_score=args.allele_private_support_discard_fallback_max_score,
+            private_support_discard_fallback_residual_min_ratio=args.allele_private_support_discard_fallback_residual_min_ratio,
             highest_suffix_tie_break_genes=args.allele_highest_suffix_tie_break_genes,
         ),
         print_plan=args.print_plan,

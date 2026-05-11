@@ -54,6 +54,8 @@ class SampleTypingPlan:
     private_support_discard_fallback_residual_alleles: str
     private_support_discard_fallback_introduced_alleles: str
     private_support_discard_fallback_introduced_max_ratio: float
+    private_support_discard_fallback_max_score: float
+    private_support_discard_fallback_residual_min_ratio: float
     highest_suffix_tie_break_genes: str
 
 
@@ -78,6 +80,8 @@ class TypingPlan:
     private_support_discard_fallback_residual_alleles: str
     private_support_discard_fallback_introduced_alleles: str
     private_support_discard_fallback_introduced_max_ratio: float
+    private_support_discard_fallback_max_score: float
+    private_support_discard_fallback_residual_min_ratio: float
     highest_suffix_tie_break_genes: str
     merged_allele_tsv: str
     samples: tuple[SampleTypingPlan, ...]
@@ -103,6 +107,8 @@ class TypingPlan:
             f"private_support_discard_fallback_residual_alleles={self.private_support_discard_fallback_residual_alleles or '<none>'}",
             f"private_support_discard_fallback_introduced_alleles={self.private_support_discard_fallback_introduced_alleles or '<none>'}",
             f"private_support_discard_fallback_introduced_max_ratio={self.private_support_discard_fallback_introduced_max_ratio}",
+            f"private_support_discard_fallback_max_score={self.private_support_discard_fallback_max_score}",
+            f"private_support_discard_fallback_residual_min_ratio={self.private_support_discard_fallback_residual_min_ratio}",
             f"highest_suffix_tie_break_genes={self.highest_suffix_tie_break_genes or '<none>'}",
             f"merged_allele_tsv={self.merged_allele_tsv}",
             f"samples={len(self.samples)}",
@@ -133,6 +139,8 @@ class TypingPlan:
                     f"  private_support_discard_fallback_residual_alleles={sample.private_support_discard_fallback_residual_alleles or '<none>'}",
                     f"  private_support_discard_fallback_introduced_alleles={sample.private_support_discard_fallback_introduced_alleles or '<none>'}",
                     f"  private_support_discard_fallback_introduced_max_ratio={sample.private_support_discard_fallback_introduced_max_ratio}",
+                    f"  private_support_discard_fallback_max_score={sample.private_support_discard_fallback_max_score}",
+                    f"  private_support_discard_fallback_residual_min_ratio={sample.private_support_discard_fallback_residual_min_ratio}",
                     f"  highest_suffix_tie_break_genes={sample.highest_suffix_tie_break_genes or '<none>'}",
                 ]
             )
@@ -190,6 +198,8 @@ class AlleleTyper:
                     private_support_discard_fallback_residual_alleles=config.private_support_discard_fallback_residual_alleles,
                     private_support_discard_fallback_introduced_alleles=config.private_support_discard_fallback_introduced_alleles,
                     private_support_discard_fallback_introduced_max_ratio=config.private_support_discard_fallback_introduced_max_ratio,
+                    private_support_discard_fallback_max_score=config.private_support_discard_fallback_max_score,
+                    private_support_discard_fallback_residual_min_ratio=config.private_support_discard_fallback_residual_min_ratio,
                     highest_suffix_tie_break_genes=config.highest_suffix_tie_break_genes,
                 )
             )
@@ -212,6 +222,8 @@ class AlleleTyper:
             private_support_discard_fallback_residual_alleles=config.private_support_discard_fallback_residual_alleles,
             private_support_discard_fallback_introduced_alleles=config.private_support_discard_fallback_introduced_alleles,
             private_support_discard_fallback_introduced_max_ratio=config.private_support_discard_fallback_introduced_max_ratio,
+            private_support_discard_fallback_max_score=config.private_support_discard_fallback_max_score,
+            private_support_discard_fallback_residual_min_ratio=config.private_support_discard_fallback_residual_min_ratio,
             highest_suffix_tie_break_genes=config.highest_suffix_tie_break_genes,
             merged_allele_tsv=cohort_name + ".allele.tsv",
             samples=tuple(sample_plans),

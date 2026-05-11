@@ -77,6 +77,18 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional maximum cross-gene ratio for introduced-allele fallback.",
     )
+    parser.add_argument(
+        "--private-support-discard-fallback-max-score",
+        type=float,
+        default=None,
+        help="Optional maximum base private-support score allowed for fallback.",
+    )
+    parser.add_argument(
+        "--private-support-discard-fallback-residual-min-ratio",
+        type=float,
+        default=None,
+        help="Optional minimum cross-gene ratio for residual-allele fallback.",
+    )
     return parser
 
 
@@ -104,6 +116,7 @@ def main() -> None:
         parse_gene_set,
         parse_name_set,
         private_positive_cross_gene_ratio,
+        private_support_score,
         pure_gene,
         select_with_highest_suffix_tie_break,
         select_with_private_support,
@@ -167,6 +180,16 @@ def main() -> None:
         if args.private_support_discard_fallback_introduced_max_ratio is not None
         else run_config.typing.private_support_discard_fallback_introduced_max_ratio
     )
+    fallback_max_score = (
+        args.private_support_discard_fallback_max_score
+        if args.private_support_discard_fallback_max_score is not None
+        else run_config.typing.private_support_discard_fallback_max_score
+    )
+    fallback_residual_min_ratio = (
+        args.private_support_discard_fallback_residual_min_ratio
+        if args.private_support_discard_fallback_residual_min_ratio is not None
+        else run_config.typing.private_support_discard_fallback_residual_min_ratio
+    )
     neutralize_groups = parse_gene_groups(neutralize_group_spec)
     private_support_genes = parse_gene_set(private_support_gene_spec)
     private_support_condition_alleles = parse_name_set(private_support_condition_spec)
@@ -228,8 +251,13 @@ def main() -> None:
             selected_without_rescue = result.selectBest(
                 min_fraction_ratio=sample.select_min_fraction_ratio
             )
-            applied_conditional_rescue = False
             conditional_cross_gene_ratio = 0.0
+            base_private_support = private_support_score(
+                selected_without_rescue,
+                allele_variants,
+                positive,
+                negative,
+            )
             if private_support_genes and gene_name not in private_support_genes:
                 support_lambda = 0.0
             if support_lambda and (
@@ -252,7 +280,6 @@ def main() -> None:
                     private_support_cross_gene_ratio,
                 )
                 if should_rescue and neutralize_groups:
-                    applied_conditional_rescue = True
                     rescue_reads_data = deepcopy(reads_data["reads"])
                     neutralize_cross_gene_reads(
                         rescue_reads_data,
@@ -291,8 +318,7 @@ def main() -> None:
                 sample.select_min_fraction_ratio,
             )
             if (
-                applied_conditional_rescue
-                and gene_name in fallback_genes
+                gene_name in fallback_genes
                 and should_use_discard_fallback(
                     selected,
                     selected_without_rescue,
@@ -300,6 +326,9 @@ def main() -> None:
                     fallback_introduced_alleles,
                     conditional_cross_gene_ratio,
                     fallback_introduced_max_ratio,
+                    base_private_support,
+                    fallback_max_score,
+                    fallback_residual_min_ratio,
                 )
             ):
                 discard_reads_data = removeMultipleMapped(deepcopy(raw_reads_data))

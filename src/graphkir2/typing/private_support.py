@@ -219,9 +219,21 @@ def should_use_discard_fallback(
     introduced_alleles: NameSet,
     cross_gene_ratio: float,
     introduced_max_cross_gene_ratio: float,
+    private_support: float,
+    max_private_support: float,
+    residual_min_cross_gene_ratio: float = 0.0,
 ) -> bool:
     """Decide whether a rescued call should fall back to discard-style evidence."""
-    if residual_alleles and selected_has_name_prefix(selected, residual_alleles):
+    if private_support > max_private_support:
+        return False
+    if (
+        residual_alleles
+        and selected_has_name_prefix(selected, residual_alleles)
+        and (
+            cross_gene_ratio >= residual_min_cross_gene_ratio
+            or selected_has_name_prefix(base_selected, introduced_alleles)
+        )
+    ):
         return True
     if not introduced_alleles:
         return False
