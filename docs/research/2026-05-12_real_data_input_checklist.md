@@ -67,7 +67,9 @@ benchmarks/generated/hprc-download-plan/download_hprc_fastq.sh
 The helper reads `data/cohorts/hprc.csv`, keeps only samples present in the HPRC
 truth TSV, and defaults to the first four samples for a mini sanity run. It
 prints SRA Toolkit `prefetch` / `fasterq-dump` commands but does not execute
-them. Increase scope only after checking disk and runtime budget:
+them. The generated `prefetch` commands use `--max-size 100G` because some HPRC
+accessions are larger than the SRA Toolkit 20G default. Increase scope only
+after checking disk and runtime budget:
 
 ```powershell
 wsl -d Ubuntu-24.04 bash -lc "source ~/miniconda3/etc/profile.d/conda.sh && conda activate graphkir_env && cd /mnt/d/works/KIR_graph && python benchmarks/scripts/prepare_hprc_download_plan.py --max-samples 0 --threads 8"

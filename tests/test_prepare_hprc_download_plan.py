@@ -44,7 +44,7 @@ def test_build_download_rows_uses_prepare_hprc_compatible_names(
     assert row.read1 == tmp_path / "fastq" / "SRR14724532_1.fastq.gz"
     assert row.read2 == tmp_path / "fastq" / "SRR14724532_2.fastq.gz"
     assert row.sra_path == tmp_path / "sra" / "SRR14724532" / "SRR14724532.sra"
-    assert "prefetch SRR14724532" in row.download_command
+    assert "prefetch SRR14724532 --max-size 100G" in row.download_command
     assert "fasterq-dump" in row.download_command
     assert "--threads 6" in row.download_command
     assert "SRR14724532_1.fastq.gz" in row.download_command
@@ -72,3 +72,18 @@ def test_write_plan_tsv_and_render_script(tmp_path: Path) -> None:
     assert "set -euo pipefail" in script
     assert "prepare_hprc_real_mini.py" in script
     assert "# HG002 / SRR14724532" in script
+
+
+def test_build_download_rows_allows_prefetch_max_size_override(
+    tmp_path: Path,
+) -> None:
+    rows = build_download_rows(
+        [HprcSample("HG002", "SRR14724532")],
+        fastq_root=tmp_path / "fastq",
+        sra_cache=tmp_path / "sra",
+        tmp_dir=tmp_path / "tmp",
+        threads=4,
+        prefetch_max_size="40G",
+    )
+
+    assert "prefetch SRR14724532 --max-size 40G" in rows[0].download_command

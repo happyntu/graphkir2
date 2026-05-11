@@ -59,13 +59,18 @@ def build_download_command(
     temp_read1: Path,
     temp_read2: Path,
     threads: int,
+    prefetch_max_size: str,
 ) -> str:
     """Build a manual SRA Toolkit command for one paired FASTQ download."""
     sample_tmp = temp_read1.parent
     cache_root = sra_path.parent.parent
     parts = [
         f"mkdir -p {shlex.quote(str(read1.parent))} {shlex.quote(str(sample_tmp))}",
-        f"prefetch {shlex.quote(accession)} --output-directory {shlex.quote(str(cache_root))}",
+        (
+            f"prefetch {shlex.quote(accession)} "
+            f"--max-size {shlex.quote(prefetch_max_size)} "
+            f"--output-directory {shlex.quote(str(cache_root))}"
+        ),
         (
             f"fasterq-dump {shlex.quote(str(sra_path))} --split-files "
             f"--threads {threads} --outdir {shlex.quote(str(sample_tmp))}"
@@ -83,6 +88,7 @@ def build_download_rows(
     sra_cache: Path,
     tmp_dir: Path,
     threads: int,
+    prefetch_max_size: str = "100G",
 ) -> list[HprcDownloadRow]:
     """Build planned output paths and commands for selected samples."""
     rows: list[HprcDownloadRow] = []
@@ -111,6 +117,7 @@ def build_download_rows(
                     temp_read1,
                     temp_read2,
                     threads,
+                    prefetch_max_size,
                 ),
                 read1_exists=read1.exists(),
                 read2_exists=read2.exists(),
@@ -208,6 +215,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--max-samples", type=int, default=4)
     parser.add_argument("--threads", type=int, default=8)
+    parser.add_argument(
+        "--prefetch-max-size",
+        default="100G",
+        help=(
+            "SRA Toolkit prefetch --max-size value. The default exceeds the "
+            "20G prefetch default because some HPRC accessions are about 30G."
+        ),
+    )
     return parser
 
 
@@ -229,6 +244,7 @@ def main() -> None:
         sra_cache=Path(args.sra_cache),
         tmp_dir=Path(args.tmp_dir),
         threads=args.threads,
+        prefetch_max_size=args.prefetch_max_size,
     )
     plan_tsv = output_dir / "hprc_fastq_download_plan.tsv"
     script_path = output_dir / "download_hprc_fastq.sh"
