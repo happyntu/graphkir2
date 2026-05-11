@@ -48,6 +48,31 @@ If files are nested below a root, add `--recursive`. Prefer `--fastq-root` for
 explicit one-off runs. Use `GRAPHKIR_HPRC_FASTQ_ROOTS` or `HPRC_FASTQ_ROOT` only
 when the same root should be reused repeatedly.
 
+## Download Plan Helper
+
+If HPRC FASTQs are not available locally, generate a reviewable download plan
+instead of starting a large download automatically:
+
+```powershell
+wsl -d Ubuntu-24.04 bash -lc "source ~/miniconda3/etc/profile.d/conda.sh && conda activate graphkir_env && cd /mnt/d/works/KIR_graph && python benchmarks/scripts/prepare_hprc_download_plan.py"
+```
+
+This writes:
+
+```text
+benchmarks/generated/hprc-download-plan/hprc_fastq_download_plan.tsv
+benchmarks/generated/hprc-download-plan/download_hprc_fastq.sh
+```
+
+The helper reads `data/cohorts/hprc.csv`, keeps only samples present in the HPRC
+truth TSV, and defaults to the first four samples for a mini sanity run. It
+prints SRA Toolkit `prefetch` / `fasterq-dump` commands but does not execute
+them. Increase scope only after checking disk and runtime budget:
+
+```powershell
+wsl -d Ubuntu-24.04 bash -lc "source ~/miniconda3/etc/profile.d/conda.sh && conda activate graphkir_env && cd /mnt/d/works/KIR_graph && python benchmarks/scripts/prepare_hprc_download_plan.py --max-samples 0 --threads 8"
+```
+
 ## Readiness Checks
 
 Run from Windows PowerShell through the verified WSL environment:

@@ -113,6 +113,10 @@ readiness gate before interpreting any Geny or HPRC real-data result. If the
 required Geny output or HPRC FASTQs are missing, report the missing inputs rather
 than continuing method tuning on synthetic residuals as if it were real-data
 validation.
+When HPRC FASTQs are missing, use
+`benchmarks/scripts/prepare_hprc_download_plan.py` to generate accession-level
+target FASTQ paths and SRA Toolkit commands for manual review. It must remain a
+planning helper only and must not start large downloads by default.
 
 ## Metrics
 

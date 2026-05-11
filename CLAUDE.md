@@ -556,6 +556,11 @@ Use `docs/research/2026-05-12_real_data_input_checklist.md` as the active
 real-data readiness checklist. It records the required Geny raw output, HPRC
 FASTQ locations/naming patterns, readiness commands, and interpretation rules
 for a valid `graphkir2` vs `Geny` claim.
+If HPRC FASTQs are missing, use
+`benchmarks/scripts/prepare_hprc_download_plan.py` to generate a manual
+SRA Toolkit download plan and script. The helper intentionally does not download
+large FASTQs; review disk and runtime budget before running its generated shell
+commands.
 
 ## Synthetic-First Workflow
 
