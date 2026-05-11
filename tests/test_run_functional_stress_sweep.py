@@ -108,6 +108,24 @@ def test_build_typing_command_adds_suballele_guard_overrides() -> None:
     assert "KIR2DS5*002,KIR2DS3*00103" in command
 
 
+def test_build_typing_command_adds_kir2dl5_overcall_guard_overrides() -> None:
+    method = [
+        item
+        for item in DEFAULT_METHODS
+        if item.name == "enhancedgate_kir2dl5guard_geneaware"
+    ][0]
+    paths = paths_for("synthetic-x", method, Path("results"))
+
+    command = build_typing_command(method, paths)
+
+    assert "--unsupported-overcall-guard-genes" in command
+    assert "KIR2DL5" in command
+    assert "--unsupported-overcall-guard-min-net-delta" in command
+    assert "20.0" in command
+    assert "--unsupported-overcall-guard-min-unsupported-delta" in command
+    assert "2" in command
+
+
 def test_functional_regressions_compares_only_three_and_five_digit() -> None:
     rows = [
         {

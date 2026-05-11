@@ -136,6 +136,41 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional discard allele prefixes to protect from configured promotions.",
     )
+    parser.add_argument(
+        "--unsupported-overcall-guard-genes",
+        default="",
+        help="Optional comma-separated genes allowed to guard unsupported candidate-only overcalls.",
+    )
+    parser.add_argument(
+        "--unsupported-overcall-guard-window",
+        type=float,
+        default=25.0,
+        help="Maximum likelihood gap for unsupported-overcall guard alternatives.",
+    )
+    parser.add_argument(
+        "--unsupported-overcall-guard-min-unsupported-delta",
+        type=int,
+        default=2,
+        help="Minimum unsupported-variant count improvement required by the overcall guard.",
+    )
+    parser.add_argument(
+        "--unsupported-overcall-guard-min-net-delta",
+        type=float,
+        default=20.0,
+        help="Minimum negative-minus-positive support improvement required by the overcall guard.",
+    )
+    parser.add_argument(
+        "--unsupported-overcall-guard-negative-threshold",
+        type=float,
+        default=5.0,
+        help="Negative support threshold for unsupported candidate-only variants.",
+    )
+    parser.add_argument(
+        "--unsupported-overcall-guard-max-positive",
+        type=float,
+        default=1.0,
+        help="Maximum positive support allowed for unsupported candidate-only variants.",
+    )
     return parser
 
 
@@ -168,6 +203,7 @@ def main() -> None:
         private_positive_cross_gene_ratio,
         private_support_score,
         pure_gene,
+        select_against_unsupported_candidate_only_variants,
         select_with_highest_suffix_tie_break,
         select_with_private_support,
         should_apply_conditional_private_support,
@@ -290,6 +326,7 @@ def main() -> None:
     functional_fallback_genes = parse_gene_set(functional_fallback_gene_spec)
     functional_fallback_promoted_alleles = parse_name_set(functional_fallback_promoted_spec)
     functional_fallback_protected_alleles = parse_name_set(functional_fallback_protected_spec)
+    unsupported_overcall_guard_genes = parse_gene_set(args.unsupported_overcall_guard_genes)
     gene_base_top_ns = parse_gene_top_n_spec(gene_base_top_n_spec)
     has_conditional_gate = bool(
         private_support_condition_alleles or private_support_cross_gene_ratio > 0.0
@@ -513,6 +550,20 @@ def main() -> None:
                             )
                             if guarded_selected != selected:
                                 selected = guarded_selected
+            if gene_name in unsupported_overcall_guard_genes:
+                selected = select_against_unsupported_candidate_only_variants(
+                    result,
+                    selected,
+                    allele_variants,
+                    positive,
+                    negative,
+                    sample.select_min_fraction_ratio,
+                    args.unsupported_overcall_guard_window,
+                    args.unsupported_overcall_guard_min_unsupported_delta,
+                    args.unsupported_overcall_guard_min_net_delta,
+                    args.unsupported_overcall_guard_negative_threshold,
+                    args.unsupported_overcall_guard_max_positive,
+                )
             if gene_name in highest_suffix_tie_break_genes:
                 selected = select_with_highest_suffix_tie_break(
                     result,

@@ -397,6 +397,130 @@ def apply_functional_promotion_guard(
     return guarded
 
 
+def _genotype_variant_ids(
+    allele_names: list[str],
+    allele_variants: dict[str, set[str]],
+) -> set[str]:
+    """Return the union of variant IDs carried by one allele tuple."""
+    variant_ids: set[str] = set()
+    for allele in allele_names:
+        variant_ids.update(allele_variants.get(allele, set()))
+    return variant_ids
+
+
+def unsupported_candidate_only_evidence(
+    candidate: list[str],
+    alternative: list[str],
+    allele_variants: dict[str, set[str]],
+    positive: VariantSupport,
+    negative: VariantSupport,
+    negative_threshold: float = 5.0,
+    max_positive: float = 1.0,
+) -> tuple[int, float]:
+    """Measure unsupported variants introduced by `candidate` vs `alternative`.
+
+    The KIR2DL5 failure audit showed wrong calls that add candidate-only
+    variants contradicted by negative reads. This helper scores that overcall
+    evidence without using sample truth labels.
+    """
+    candidate_only = _genotype_variant_ids(candidate, allele_variants) - _genotype_variant_ids(
+        alternative,
+        allele_variants,
+    )
+    unsupported = 0
+    net_penalty = 0.0
+    for variant_id in candidate_only:
+        positive_support = positive[variant_id]
+        negative_support = negative[variant_id]
+        net_penalty += max(0.0, negative_support - positive_support)
+        if negative_support >= negative_threshold and positive_support <= max_positive:
+            unsupported += 1
+    return unsupported, net_penalty
+
+
+def _passes_fraction_filter(
+    result: object,
+    index: int,
+    min_fraction_ratio: float,
+) -> bool:
+    """Return whether a result row passes the standard abundance filter."""
+    expect_prob = 1 / int(result.n)  # type: ignore[attr-defined]
+    return all(
+        fraction >= expect_prob * min_fraction_ratio
+        for fraction in result.fraction[index]  # type: ignore[attr-defined]
+    )
+
+
+def select_against_unsupported_candidate_only_variants(
+    result: object,
+    selected: list[str],
+    allele_variants: dict[str, set[str]],
+    positive: VariantSupport,
+    negative: VariantSupport,
+    min_fraction_ratio: float,
+    max_likelihood_gap: float = 25.0,
+    min_unsupported_delta: int = 2,
+    min_net_delta: float = 20.0,
+    negative_threshold: float = 5.0,
+    max_positive: float = 1.0,
+) -> list[str]:
+    """Fallback from an overcalled genotype to a nearby less-unsupported one.
+
+    This is intentionally unsupervised: it compares the selected genotype with
+    nearby likelihood candidates and only switches when the selected call adds
+    substantially more unsupported candidate-only variants than the alternative.
+    """
+    if result.isFail():  # type: ignore[attr-defined]
+        return selected
+
+    selected_key = sorted(selected)
+    selected_index = 0
+    for index, allele_names in enumerate(result.allele_name):  # type: ignore[attr-defined]
+        if sorted(allele_names) == selected_key:
+            selected_index = index
+            break
+    selected_value = float(result.value[selected_index])  # type: ignore[attr-defined]
+
+    best: tuple[float, int, float, list[str]] | None = None
+    for index, alternative in enumerate(result.allele_name):  # type: ignore[attr-defined]
+        if sorted(alternative) == selected_key:
+            continue
+        likelihood_gap = selected_value - float(result.value[index])  # type: ignore[attr-defined]
+        if likelihood_gap < 0.0 or likelihood_gap > max_likelihood_gap:
+            continue
+        if not _passes_fraction_filter(result, index, min_fraction_ratio):
+            continue
+        selected_unsupported, selected_penalty = unsupported_candidate_only_evidence(
+            selected,
+            alternative,
+            allele_variants,
+            positive,
+            negative,
+            negative_threshold,
+            max_positive,
+        )
+        alternative_unsupported, alternative_penalty = unsupported_candidate_only_evidence(
+            alternative,
+            selected,
+            allele_variants,
+            positive,
+            negative,
+            negative_threshold,
+            max_positive,
+        )
+        unsupported_delta = selected_unsupported - alternative_unsupported
+        net_delta = selected_penalty - alternative_penalty
+        if unsupported_delta < min_unsupported_delta or net_delta < min_net_delta:
+            continue
+        candidate = (net_delta, unsupported_delta, -likelihood_gap, alternative)
+        if best is None or candidate > best:
+            best = candidate
+
+    if best is None:
+        return selected
+    return best[3]
+
+
 def select_with_private_support(
     result: object,
     allele_variants: dict[str, set[str]],

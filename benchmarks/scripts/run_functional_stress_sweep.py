@@ -29,6 +29,7 @@ DEFAULT_LABELS = (
 )
 
 FUNCTIONAL_METRICS: tuple[Resolution, ...] = ("three_digit_f1", "five_digit_f1")
+CANDIDATE_METHOD = "enhancedgate_kir2dl5guard_geneaware"
 
 
 @dataclass(frozen=True)
@@ -48,6 +49,12 @@ class MethodSpec:
     functional_discard_fallback_min_score_delta: float = 0.0
     functional_discard_fallback_promoted_alleles: str = ""
     functional_discard_fallback_protected_alleles: str = ""
+    unsupported_overcall_guard_genes: str = ""
+    unsupported_overcall_guard_window: float = 25.0
+    unsupported_overcall_guard_min_unsupported_delta: int = 2
+    unsupported_overcall_guard_min_net_delta: float = 20.0
+    unsupported_overcall_guard_negative_threshold: float = 5.0
+    unsupported_overcall_guard_max_positive: float = 1.0
     exon_weight: float | None = None
     ambiguity_neutral_prob: float | None = None
     select_min_fraction_ratio: float | None = None
@@ -141,6 +148,25 @@ DEFAULT_METHODS: tuple[MethodSpec, ...] = (
         functional_discard_fallback_min_score_delta=20.0,
         functional_discard_fallback_promoted_alleles="KIR2DS5*027,KIR2DS3*00109",
         functional_discard_fallback_protected_alleles="KIR2DS5*002,KIR2DS3*00103",
+    ),
+    MethodSpec(
+        name="enhancedgate_kir2dl5guard_geneaware",
+        runner="private_support",
+        config_suffix="-conditional-kir2ds3-enhancedgate",
+        multi_map_mode="likelihood",
+        top_n=5000,
+        base_top_n=600,
+        gene_base_top_ns="KIR2DL1:1000",
+        functional_discard_fallback_genes="KIR2DL1,KIR2DS5,KIR2DS3",
+        functional_discard_fallback_resolution=3,
+        functional_discard_fallback_max_score=-100.0,
+        functional_discard_fallback_min_score_delta=20.0,
+        functional_discard_fallback_promoted_alleles="KIR2DS5*027,KIR2DS3*00109",
+        functional_discard_fallback_protected_alleles="KIR2DS5*002,KIR2DS3*00103",
+        unsupported_overcall_guard_genes="KIR2DL5",
+        unsupported_overcall_guard_window=25.0,
+        unsupported_overcall_guard_min_unsupported_delta=2,
+        unsupported_overcall_guard_min_net_delta=20.0,
     ),
 )
 
@@ -282,6 +308,23 @@ def build_typing_command(
                 method.functional_discard_fallback_protected_alleles,
             ]
         )
+    if method.unsupported_overcall_guard_genes:
+        command.extend(
+            [
+                "--unsupported-overcall-guard-genes",
+                method.unsupported_overcall_guard_genes,
+                "--unsupported-overcall-guard-window",
+                str(method.unsupported_overcall_guard_window),
+                "--unsupported-overcall-guard-min-unsupported-delta",
+                str(method.unsupported_overcall_guard_min_unsupported_delta),
+                "--unsupported-overcall-guard-min-net-delta",
+                str(method.unsupported_overcall_guard_min_net_delta),
+                "--unsupported-overcall-guard-negative-threshold",
+                str(method.unsupported_overcall_guard_negative_threshold),
+                "--unsupported-overcall-guard-max-positive",
+                str(method.unsupported_overcall_guard_max_positive),
+            ]
+        )
     return command
 
 
@@ -388,6 +431,12 @@ def run_method(
         "functional_discard_fallback_min_score_delta": str(method.functional_discard_fallback_min_score_delta),
         "functional_discard_fallback_promoted_alleles": method.functional_discard_fallback_promoted_alleles,
         "functional_discard_fallback_protected_alleles": method.functional_discard_fallback_protected_alleles,
+        "unsupported_overcall_guard_genes": method.unsupported_overcall_guard_genes,
+        "unsupported_overcall_guard_window": str(method.unsupported_overcall_guard_window),
+        "unsupported_overcall_guard_min_unsupported_delta": str(method.unsupported_overcall_guard_min_unsupported_delta),
+        "unsupported_overcall_guard_min_net_delta": str(method.unsupported_overcall_guard_min_net_delta),
+        "unsupported_overcall_guard_negative_threshold": str(method.unsupported_overcall_guard_negative_threshold),
+        "unsupported_overcall_guard_max_positive": str(method.unsupported_overcall_guard_max_positive),
         "runtime_seconds": f"{timed.runtime_seconds:.3f}",
         "max_rss_mb": "" if timed.max_rss_mb is None else f"{timed.max_rss_mb:.1f}",
         "three_digit_f1": metrics["three_digit_f1"],
@@ -540,16 +589,16 @@ def render_markdown(
     regressions = functional_regressions(
         per_gene_rows,
         baseline_method="discard",
-        candidate_method="enhancedgate_functionalguard_geneaware",
+        candidate_method=CANDIDATE_METHOD,
     )
     gains = functional_gains(
         per_gene_rows,
         baseline_method="discard",
-        candidate_method="enhancedgate_functionalguard_geneaware",
+        candidate_method=CANDIDATE_METHOD,
     )
     remaining_errors = remaining_functional_errors(
         per_gene_rows,
-        method="enhancedgate_functionalguard_geneaware",
+        method=CANDIDATE_METHOD,
     )
     lines = [
         "# Functional Stress Seed Sweep",
@@ -616,7 +665,7 @@ def render_markdown(
     lines.extend(
         [
             "",
-            "## Functional Guard Gene-aware Vs Discard",
+            "## KIR2DL5 Guard Gene-aware Vs Discard",
             "",
         ]
     )
@@ -675,7 +724,7 @@ def render_markdown(
     lines.extend(
         [
             "",
-            "Remaining functional-guard 3/5-digit errors:",
+            "Remaining KIR2DL5-guard 3/5-digit errors:",
             "",
             "| panel | gene | metric | F1 |",
             "|---|---:|---:|---:|",
@@ -700,7 +749,9 @@ def render_markdown(
             "",
             "## Decision",
             "",
-            "`enhancedgate_functionalguard_geneaware` resolves the strict",
+            "`enhancedgate_kir2dl5guard_geneaware` extends the functional guard",
+            "with a KIR2DL5-only unsupported candidate-only variant overcall guard.",
+            "It keeps the strict",
             "`synthetic-functional8x6` KIR2DL1 3-digit regression, keeps the",
             "KIR2DS5 promotion guard, adds a narrow KIR2DS3 suballele guard,",
             "and keeps the gene-aware top-n runtime setting.",
@@ -748,6 +799,12 @@ def main() -> None:
         "functional_discard_fallback_min_score_delta",
         "functional_discard_fallback_promoted_alleles",
         "functional_discard_fallback_protected_alleles",
+        "unsupported_overcall_guard_genes",
+        "unsupported_overcall_guard_window",
+        "unsupported_overcall_guard_min_unsupported_delta",
+        "unsupported_overcall_guard_min_net_delta",
+        "unsupported_overcall_guard_negative_threshold",
+        "unsupported_overcall_guard_max_positive",
         "runtime_seconds",
         "max_rss_mb",
         "three_digit_f1",

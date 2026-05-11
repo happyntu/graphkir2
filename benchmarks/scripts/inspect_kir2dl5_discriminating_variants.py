@@ -109,7 +109,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--candidate-method",
-        default="enhancedgate_functionalguard_geneaware",
+        default="enhancedgate_kir2dl5guard_geneaware",
         help="Candidate method to inspect.",
     )
     parser.add_argument(
@@ -537,17 +537,22 @@ def render_markdown(
             + " |"
         )
 
-    lines.extend(
-        [
-            "",
-            "## Interpretation",
-            "",
-            "* KIR2DL5 failures are not caused by missing truth-only variants: in these three cases the truth genotype has no variants absent from the candidate genotype, while the wrong candidate introduces extra candidate-only variants.",
-            "* The observed candidate-only variants are mostly unsupported or explicitly contradicted by negative reads. The positive truth-candidate margins mean this discriminating-variant evidence favors the truth genotype despite the current likelihood rank-1 candidate.",
-            "* Seed5103 has ambiguous positive signal on a candidate-only exon variant, but the stronger candidate-only negative evidence still favors truth. A guard should therefore penalize unsupported candidate-only variants rather than simply reward any candidate private positive signal.",
-            "* Use this report to design a narrow KIR2DL5A/B placement or KIR2DL5A*001-vs-*012 overcall guard before changing any KIR2DS3/KIR2DS5 logic.",
-        ]
-    )
+    lines.extend(["", "## Interpretation", ""])
+    if not rows:
+        lines.extend(
+            [
+                "* No KIR2DL5 discriminating-variant rows are present because the current candidate has no remaining KIR2DL5A/B functional errors in this stress sweep.",
+                "* The unsupported-overcall guard should remain constrained to KIR2DL5 and to cases with multiple unsupported selected-only variants.",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "* KIR2DL5 failures should be interpreted from the truth-only and candidate-only variant evidence above.",
+                "* A positive truth-candidate margin means observed discriminating-variant evidence favors the truth genotype despite the current candidate.",
+                "* A negative margin means variant-level evidence itself agrees with the current candidate, so a broader guard may be unsafe.",
+            ]
+        )
     return "\n".join(lines) + "\n"
 
 

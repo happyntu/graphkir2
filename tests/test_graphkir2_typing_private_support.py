@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
 
 from graphkir2.cn.interface import (
@@ -19,11 +20,13 @@ from graphkir2.typing.private_support import (
     parse_gene_top_n_spec,
     parse_name_set,
     private_positive_cross_gene_ratio,
+    select_against_unsupported_candidate_only_variants,
     select_with_highest_suffix_tie_break,
     select_with_private_support,
     should_apply_conditional_private_support,
     should_use_functional_discard_fallback,
     should_use_discard_fallback,
+    unsupported_candidate_only_evidence,
 )
 
 
@@ -66,6 +69,24 @@ class DummyTieResult:
         [0.52, 0.48],
         [0.52, 0.48],
         [0.52, 0.48],
+    ]
+
+    def isFail(self) -> bool:
+        return False
+
+
+class DummyOvercallResult:
+    n = 2
+    value = [-10.0, -22.0, -40.0]
+    allele_name = [
+        ["KIR2DL5A*00107", "KIR2DL5A*01201"],
+        ["KIR2DL5A*00107", "KIR2DL5A*00107"],
+        ["KIR2DL5A*00107", "KIR2DL5B*01301"],
+    ]
+    fraction = [
+        [0.50, 0.50],
+        [0.50, 0.50],
+        [0.50, 0.50],
     ]
 
     def isFail(self) -> bool:
@@ -150,6 +171,73 @@ def test_private_support_can_select_lower_likelihood_supported_candidate() -> No
     )
 
     assert selected == ["KIR2DS3*0010301", "KIR2DS3*0011201"]
+
+
+def test_unsupported_candidate_only_evidence_counts_negative_overcall_variants() -> None:
+    allele_variants = {
+        "KIR2DL5A*00107": {"shared"},
+        "KIR2DL5A*01201": {"shared", "overcall", "weak"},
+    }
+    positive = {"shared": 5.0, "overcall": 0.0, "weak": 1.0}
+    negative = {"shared": 0.0, "overcall": 9.0, "weak": 4.0}
+
+    unsupported, net_penalty = unsupported_candidate_only_evidence(
+        ["KIR2DL5A*00107", "KIR2DL5A*01201"],
+        ["KIR2DL5A*00107", "KIR2DL5A*00107"],
+        allele_variants,
+        positive,  # type: ignore[arg-type]
+        negative,  # type: ignore[arg-type]
+    )
+
+    assert unsupported == 1
+    assert net_penalty == 12.0
+
+
+def test_unsupported_overcall_guard_selects_nearby_less_unsupported_candidate() -> None:
+    allele_variants = {
+        "KIR2DL5A*00107": {"shared"},
+        "KIR2DL5A*01201": {"shared", "overcall"},
+        "KIR2DL5B*01301": {"shared", "other"},
+    }
+    positive: defaultdict[str, float] = defaultdict(float, {"overcall": 0.0, "other": 0.0})
+    negative: defaultdict[str, float] = defaultdict(float, {"overcall": 30.0, "other": 30.0})
+
+    selected = select_against_unsupported_candidate_only_variants(
+        DummyOvercallResult(),
+        ["KIR2DL5A*00107", "KIR2DL5A*01201"],
+        allele_variants,
+        positive,
+        negative,
+        min_fraction_ratio=0.7,
+        max_likelihood_gap=25.0,
+        min_unsupported_delta=1,
+        min_net_delta=20.0,
+    )
+
+    assert selected == ["KIR2DL5A*00107", "KIR2DL5A*00107"]
+
+
+def test_unsupported_overcall_guard_respects_likelihood_window() -> None:
+    allele_variants = {
+        "KIR2DL5A*00107": {"shared"},
+        "KIR2DL5A*01201": {"shared", "overcall"},
+    }
+    positive: defaultdict[str, float] = defaultdict(float)
+    negative: defaultdict[str, float] = defaultdict(float, {"overcall": 30.0})
+
+    selected = select_against_unsupported_candidate_only_variants(
+        DummyOvercallResult(),
+        ["KIR2DL5A*00107", "KIR2DL5A*01201"],
+        allele_variants,
+        positive,
+        negative,
+        min_fraction_ratio=0.7,
+        max_likelihood_gap=5.0,
+        min_unsupported_delta=1,
+        min_net_delta=20.0,
+    )
+
+    assert selected == ["KIR2DL5A*00107", "KIR2DL5A*01201"]
 
 
 def test_conditional_private_support_uses_cross_gene_ratio_gate() -> None:

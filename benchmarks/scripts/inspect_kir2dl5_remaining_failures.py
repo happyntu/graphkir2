@@ -45,7 +45,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--candidate-method",
-        default="enhancedgate_functionalguard_geneaware",
+        default="enhancedgate_kir2dl5guard_geneaware",
         help="Candidate method to audit.",
     )
     parser.add_argument(
@@ -602,18 +602,22 @@ def render_markdown(rows: list[dict[str, str]], output_tsv: str) -> str:
             + " |"
         )
 
-    lines.extend(
-        [
-            "",
-            "## Interpretation",
-            "",
-            "* The `synthetic-difficult5x12` sample 09 failure is not merged KIR2DL5 CN loss: the truth has KIR2DL5A=2/KIR2DL5B=0 and normalized merged CN=2, while the candidate places one copy on KIR2DL5B. This is an A/B placement problem on the merged KIR2DL5 backbone.",
-            "* The seed5101 sample 11 and seed5103 sample 04 failures keep the KIR2DL5A copy count but substitute KIR2DL5A*001 with KIR2DL5A*012. Because the candidate agrees with discard and likelihood here, this is shared allele discrimination, not an enhancedgate regression.",
-            "* All KIR2DL5 truths are still inside the current top-n search (`rank 3`, `15`, and `11`), so the immediate blocker is likelihood/reranking, not candidate truncation.",
-            "* Private-support evidence is mixed: it favors truth for sample 09 and seed5101 sample 11, but favors the current candidate for seed5103 sample 04. A broad KIR2DL5 private-support rescue would therefore need a strict condition rather than a global switch.",
-            "* Next method work should inspect KIR2DL5A*001-vs-*012 and KIR2DL5A-vs-KIR2DL5B discriminating variants before changing KIR2DS3/KIR2DS5 guards; the current KIR2DS3/KIR2DS4/KIR2DS5 gains should remain isolated.",
-        ]
-    )
+    lines.extend(["", "## Interpretation", ""])
+    if not rows:
+        lines.extend(
+            [
+                "* No KIR2DL5A/B 3-digit or 5-digit remaining errors are present for the current candidate.",
+                "* The KIR2DL5-only unsupported-overcall guard resolved the previous A/B placement and KIR2DL5A*001-vs-*012 overcall cases without leaving a KIR2DL5 functional miss in this stress sweep.",
+                "* Keep the guard narrow: it should continue to require multiple unsupported selected-only variants before replacing a likelihood-selected KIR2DL5 call.",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "* Remaining rows indicate KIR2DL5 still needs case-specific follow-up before promoting broader changes.",
+                "* Prefer inspecting discriminating variants for these rows before changing KIR2DS3/KIR2DS5 guards.",
+            ]
+        )
     return "\n".join(lines) + "\n"
 
 
