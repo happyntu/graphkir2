@@ -18,6 +18,7 @@ DEFAULT_METHODS = (
     "enhancedgate_kir2dl1_kir2ds5guard_geneaware",
     "enhancedgate_functionalguard_geneaware",
     "enhancedgate_kir2dl5guard_geneaware",
+    "enhancedgate_kir2dl5_kir2ds5unsupported_geneaware",
 )
 
 
@@ -33,7 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--candidate-method",
-        default="enhancedgate_kir2dl5guard_geneaware",
+        default="enhancedgate_kir2dl5_kir2ds5unsupported_geneaware",
         help="Method whose remaining functional errors should be triaged.",
     )
     parser.add_argument(
@@ -387,8 +388,8 @@ def render_markdown(
             "",
             "## Recommended Next Method Work",
             "",
-            "* If KIR2DS5 candidate regressions remain, tighten the KIR2DS5*027 promotion guard rather than broadening KIR2DS3/KIR2DS5 neutralization.",
-            "* If KIR2DS3 candidate regressions remain, inspect suballele-specific private support before changing the broader KIR2DS3 rescue gate.",
+            "* KIR2DS5 has no remaining 3/5-digit functional rows for the current candidate; keep the targeted KIR2DS5 guard narrow unless broader panels reveal a regression.",
+            "* Inspect the remaining KIR2DS3 rows at suballele/private-support level before changing the broader KIR2DS3 rescue gate.",
             "* Keep any future KIR2DL5A/B work separate from the KIR2DS3/KIR2DS5 gate work.",
         ]
     )

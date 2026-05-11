@@ -126,6 +126,28 @@ def test_build_typing_command_adds_kir2dl5_overcall_guard_overrides() -> None:
     assert "2" in command
 
 
+def test_build_typing_command_adds_targeted_kir2ds5_overcall_guard_overrides() -> None:
+    method = [
+        item
+        for item in DEFAULT_METHODS
+        if item.name == "enhancedgate_kir2dl5_kir2ds5unsupported_geneaware"
+    ][0]
+    paths = paths_for("synthetic-x", method, Path("results"))
+
+    command = build_typing_command(method, paths)
+
+    assert "--unsupported-overcall-guard-genes" in command
+    assert "KIR2DL5" in command
+    assert "--targeted-unsupported-overcall-guard-genes" in command
+    assert "KIR2DS5" in command
+    assert "--targeted-unsupported-overcall-guard-alleles" in command
+    assert "KIR2DS5*027,KIR2DS5*010" in command
+    assert "--targeted-unsupported-overcall-guard-min-unsupported-delta" in command
+    assert "1" in command
+    assert "--targeted-unsupported-overcall-guard-preserve-non-target-resolution" in command
+    assert "5" in command
+
+
 def test_functional_regressions_compares_only_three_and_five_digit() -> None:
     rows = [
         {

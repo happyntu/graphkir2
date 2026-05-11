@@ -93,6 +93,60 @@ class DummyOvercallResult:
         return False
 
 
+class DummyKIR2DS5OvercallResult:
+    n = 2
+    value = [-10.0, -15.0, -18.0]
+    allele_name = [
+        ["KIR2DS5*0210102", "KIR2DS5*0270102"],
+        ["KIR2DS5*0210101", "KIR2DS5*0020129"],
+        ["KIR2DS5*0210102", "KIR2DS5*0020129"],
+    ]
+    fraction = [
+        [0.50, 0.50],
+        [0.50, 0.50],
+        [0.50, 0.50],
+    ]
+
+    def isFail(self) -> bool:
+        return False
+
+
+class DummyKIR2DS5ShiftResult:
+    n = 2
+    value = [-10.0, -12.0, -15.0]
+    allele_name = [
+        ["KIR2DS5*0020113", "KIR2DS5*0270102"],
+        ["KIR2DS5*034", "KIR2DS5*010"],
+        ["KIR2DS5*0020113", "KIR2DS5*024"],
+    ]
+    fraction = [
+        [0.50, 0.50],
+        [0.50, 0.50],
+        [0.50, 0.50],
+    ]
+
+    def isFail(self) -> bool:
+        return False
+
+
+class DummyKIR2DS5PreservedShiftResult:
+    n = 2
+    value = [-10.0, -12.0, -15.0]
+    allele_name = [
+        ["KIR2DS5*0020113", "KIR2DS5*0270102"],
+        ["KIR2DS5*0020126", "KIR2DS5*010"],
+        ["KIR2DS5*0020113", "KIR2DS5*024"],
+    ]
+    fraction = [
+        [0.50, 0.50],
+        [0.50, 0.50],
+        [0.50, 0.50],
+    ]
+
+    def isFail(self) -> bool:
+        return False
+
+
 def test_private_support_neutralizes_configured_cross_gene_group_only() -> None:
     reads = [
         DummyRead("KIR2DS3*BACKBONE", "pair1\tA", "", 0.5, 0.5, [], [], [], []),
@@ -193,6 +247,32 @@ def test_unsupported_candidate_only_evidence_counts_negative_overcall_variants()
     assert net_penalty == 12.0
 
 
+def test_unsupported_candidate_only_evidence_can_filter_to_selected_prefix() -> None:
+    allele_variants = {
+        "KIR2DS5*0210102": {"other_overcall"},
+        "KIR2DS5*0270102": {"target_overcall"},
+        "KIR2DS5*0210101": set(),
+        "KIR2DS5*0020129": set(),
+    }
+    positive: defaultdict[str, float] = defaultdict(float)
+    negative: defaultdict[str, float] = defaultdict(
+        float,
+        {"target_overcall": 42.0, "other_overcall": 24.0},
+    )
+
+    unsupported, net_penalty = unsupported_candidate_only_evidence(
+        ["KIR2DS5*0210102", "KIR2DS5*0270102"],
+        ["KIR2DS5*0210101", "KIR2DS5*0020129"],
+        allele_variants,
+        positive,
+        negative,
+        candidate_allele_prefixes=parse_name_set("KIR2DS5*027"),
+    )
+
+    assert unsupported == 1
+    assert net_penalty == 42.0
+
+
 def test_unsupported_overcall_guard_selects_nearby_less_unsupported_candidate() -> None:
     allele_variants = {
         "KIR2DL5A*00107": {"shared"},
@@ -215,6 +295,118 @@ def test_unsupported_overcall_guard_selects_nearby_less_unsupported_candidate() 
     )
 
     assert selected == ["KIR2DL5A*00107", "KIR2DL5A*00107"]
+
+
+def test_targeted_unsupported_overcall_guard_selects_kir2ds5_non_027_alternative() -> None:
+    allele_variants = {
+        "KIR2DS5*0210102": {"other_overcall"},
+        "KIR2DS5*0270102": {"target_overcall"},
+        "KIR2DS5*0210101": set(),
+        "KIR2DS5*0020129": set(),
+    }
+    positive: defaultdict[str, float] = defaultdict(float)
+    negative: defaultdict[str, float] = defaultdict(
+        float,
+        {"target_overcall": 42.0, "other_overcall": 24.0},
+    )
+
+    selected = select_against_unsupported_candidate_only_variants(
+        DummyKIR2DS5OvercallResult(),
+        ["KIR2DS5*0210102", "KIR2DS5*0270102"],
+        allele_variants,
+        positive,
+        negative,
+        min_fraction_ratio=0.7,
+        max_likelihood_gap=25.0,
+        min_unsupported_delta=1,
+        min_net_delta=20.0,
+        selected_allele_prefixes=parse_name_set("KIR2DS5*027"),
+    )
+
+    assert selected == ["KIR2DS5*0210101", "KIR2DS5*0020129"]
+
+
+def test_targeted_unsupported_overcall_guard_ignores_selected_without_prefix() -> None:
+    allele_variants = {
+        "KIR2DS5*0210102": {"other_overcall"},
+        "KIR2DS5*0020129": set(),
+    }
+    positive: defaultdict[str, float] = defaultdict(float)
+    negative: defaultdict[str, float] = defaultdict(float, {"other_overcall": 42.0})
+
+    selected = select_against_unsupported_candidate_only_variants(
+        DummyKIR2DS5OvercallResult(),
+        ["KIR2DS5*0210102", "KIR2DS5*0020129"],
+        allele_variants,
+        positive,
+        negative,
+        min_fraction_ratio=0.7,
+        max_likelihood_gap=25.0,
+        min_unsupported_delta=1,
+        min_net_delta=20.0,
+        selected_allele_prefixes=parse_name_set("KIR2DS5*027"),
+    )
+
+    assert selected == ["KIR2DS5*0210102", "KIR2DS5*0020129"]
+
+
+def test_targeted_unsupported_overcall_guard_can_preserve_non_target_resolution() -> None:
+    allele_variants = {
+        "KIR2DS5*0020113": {"selected_non_target"},
+        "KIR2DS5*0270102": {"target_overcall"},
+        "KIR2DS5*034": set(),
+        "KIR2DS5*010": set(),
+        "KIR2DS5*024": set(),
+    }
+    positive: defaultdict[str, float] = defaultdict(float)
+    negative: defaultdict[str, float] = defaultdict(float, {"target_overcall": 45.0})
+
+    selected = select_against_unsupported_candidate_only_variants(
+        DummyKIR2DS5ShiftResult(),
+        ["KIR2DS5*0020113", "KIR2DS5*0270102"],
+        allele_variants,
+        positive,
+        negative,
+        min_fraction_ratio=0.7,
+        max_likelihood_gap=25.0,
+        min_unsupported_delta=1,
+        min_net_delta=20.0,
+        selected_allele_prefixes=parse_name_set("KIR2DS5*027"),
+        preserve_non_target_resolution=5,
+    )
+
+    assert selected == ["KIR2DS5*0020113", "KIR2DS5*024"]
+
+
+def test_targeted_unsupported_overcall_guard_penalizes_bad_target_alternative() -> None:
+    allele_variants = {
+        "KIR2DS5*0020113": {"selected_non_target"},
+        "KIR2DS5*0270102": {"target_overcall"},
+        "KIR2DS5*0020126": {"selected_non_target", "bad_suballele"},
+        "KIR2DS5*010": {"bad_target_overcall"},
+        "KIR2DS5*024": set(),
+    }
+    positive: defaultdict[str, float] = defaultdict(float)
+    negative: defaultdict[str, float] = defaultdict(
+        float,
+        {"target_overcall": 45.0, "bad_target_overcall": 120.0},
+    )
+
+    selected = select_against_unsupported_candidate_only_variants(
+        DummyKIR2DS5PreservedShiftResult(),
+        ["KIR2DS5*0020113", "KIR2DS5*0270102"],
+        allele_variants,
+        positive,
+        negative,
+        min_fraction_ratio=0.7,
+        max_likelihood_gap=25.0,
+        min_unsupported_delta=1,
+        min_net_delta=20.0,
+        selected_allele_prefixes=parse_name_set("KIR2DS5*027,KIR2DS5*010"),
+        preserve_non_target_resolution=5,
+    )
+
+    assert selected == ["KIR2DS5*0020113", "KIR2DS5*024"]
 
 
 def test_unsupported_overcall_guard_respects_likelihood_window() -> None:

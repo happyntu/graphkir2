@@ -90,7 +90,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--candidate-method",
-        default="enhancedgate_kir2dl5guard_geneaware",
+        default="enhancedgate_kir2dl5_kir2ds5unsupported_geneaware",
         help="Candidate method to audit.",
     )
     parser.add_argument(
@@ -591,7 +591,7 @@ def render_markdown(
         lines.extend(
             [
                 "* No KIR2DS5 3-digit or 5-digit remaining errors are present for the current candidate.",
-                "* Keep the existing KIR2DS5 promotion guard unchanged unless broader stress panels reveal a candidate regression.",
+                "* Keep the existing KIR2DS5 promotion guard and targeted `KIR2DS5*027/KIR2DS5*010` unsupported-overcall guard unchanged unless broader stress panels reveal a candidate regression.",
             ]
         )
     else:

@@ -171,6 +171,52 @@ def build_parser() -> argparse.ArgumentParser:
         default=1.0,
         help="Maximum positive support allowed for unsupported candidate-only variants.",
     )
+    parser.add_argument(
+        "--targeted-unsupported-overcall-guard-genes",
+        default="",
+        help="Optional genes allowed to guard selected allele-prefix unsupported overcalls.",
+    )
+    parser.add_argument(
+        "--targeted-unsupported-overcall-guard-alleles",
+        default="",
+        help="Allele prefixes required in the selected call before targeted unsupported guard runs.",
+    )
+    parser.add_argument(
+        "--targeted-unsupported-overcall-guard-window",
+        type=float,
+        default=25.0,
+        help="Maximum likelihood gap for targeted unsupported-overcall guard alternatives.",
+    )
+    parser.add_argument(
+        "--targeted-unsupported-overcall-guard-min-unsupported-delta",
+        type=int,
+        default=1,
+        help="Minimum targeted unsupported-variant improvement required by the guard.",
+    )
+    parser.add_argument(
+        "--targeted-unsupported-overcall-guard-min-net-delta",
+        type=float,
+        default=20.0,
+        help="Minimum targeted negative-minus-positive support improvement required by the guard.",
+    )
+    parser.add_argument(
+        "--targeted-unsupported-overcall-guard-preserve-non-target-resolution",
+        type=int,
+        default=0,
+        help="Optional allele field length that targeted alternatives must preserve outside the target prefixes.",
+    )
+    parser.add_argument(
+        "--targeted-unsupported-overcall-guard-negative-threshold",
+        type=float,
+        default=5.0,
+        help="Negative support threshold for targeted unsupported candidate-only variants.",
+    )
+    parser.add_argument(
+        "--targeted-unsupported-overcall-guard-max-positive",
+        type=float,
+        default=1.0,
+        help="Maximum positive support allowed for targeted unsupported candidate-only variants.",
+    )
     return parser
 
 
@@ -327,6 +373,12 @@ def main() -> None:
     functional_fallback_promoted_alleles = parse_name_set(functional_fallback_promoted_spec)
     functional_fallback_protected_alleles = parse_name_set(functional_fallback_protected_spec)
     unsupported_overcall_guard_genes = parse_gene_set(args.unsupported_overcall_guard_genes)
+    targeted_unsupported_overcall_guard_genes = parse_gene_set(
+        args.targeted_unsupported_overcall_guard_genes
+    )
+    targeted_unsupported_overcall_guard_alleles = parse_name_set(
+        args.targeted_unsupported_overcall_guard_alleles
+    )
     gene_base_top_ns = parse_gene_top_n_spec(gene_base_top_n_spec)
     has_conditional_gate = bool(
         private_support_condition_alleles or private_support_cross_gene_ratio > 0.0
@@ -563,6 +615,22 @@ def main() -> None:
                     args.unsupported_overcall_guard_min_net_delta,
                     args.unsupported_overcall_guard_negative_threshold,
                     args.unsupported_overcall_guard_max_positive,
+                )
+            if gene_name in targeted_unsupported_overcall_guard_genes:
+                selected = select_against_unsupported_candidate_only_variants(
+                    result,
+                    selected,
+                    allele_variants,
+                    positive,
+                    negative,
+                    sample.select_min_fraction_ratio,
+                    args.targeted_unsupported_overcall_guard_window,
+                    args.targeted_unsupported_overcall_guard_min_unsupported_delta,
+                    args.targeted_unsupported_overcall_guard_min_net_delta,
+                    args.targeted_unsupported_overcall_guard_negative_threshold,
+                    args.targeted_unsupported_overcall_guard_max_positive,
+                    targeted_unsupported_overcall_guard_alleles,
+                    args.targeted_unsupported_overcall_guard_preserve_non_target_resolution,
                 )
             if gene_name in highest_suffix_tie_break_genes:
                 selected = select_with_highest_suffix_tie_break(

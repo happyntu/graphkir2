@@ -408,6 +408,37 @@ def _genotype_variant_ids(
     return variant_ids
 
 
+def _genotype_variant_ids_for_prefixes(
+    allele_names: list[str],
+    allele_variants: dict[str, set[str]],
+    prefixes: NameSet,
+) -> set[str]:
+    """Return genotype variant IDs carried by alleles matching prefixes."""
+    if not prefixes:
+        return _genotype_variant_ids(allele_names, allele_variants)
+    variant_ids: set[str] = set()
+    for allele in allele_names:
+        if any(allele.startswith(prefix) for prefix in prefixes):
+            variant_ids.update(allele_variants.get(allele, set()))
+    return variant_ids
+
+
+def _non_prefix_resolution_key(
+    allele_names: list[str],
+    prefixes: NameSet,
+    resolution: int,
+) -> tuple[str, ...]:
+    """Build a functional key for alleles that are not covered by prefixes."""
+    return tuple(
+        sorted(
+            limit_allele_resolution(allele, resolution)
+            for allele in allele_names
+            if "*" in allele
+            and not any(allele.startswith(prefix) for prefix in prefixes)
+        )
+    )
+
+
 def unsupported_candidate_only_evidence(
     candidate: list[str],
     alternative: list[str],
@@ -416,6 +447,7 @@ def unsupported_candidate_only_evidence(
     negative: VariantSupport,
     negative_threshold: float = 5.0,
     max_positive: float = 1.0,
+    candidate_allele_prefixes: NameSet = frozenset(),
 ) -> tuple[int, float]:
     """Measure unsupported variants introduced by `candidate` vs `alternative`.
 
@@ -427,6 +459,12 @@ def unsupported_candidate_only_evidence(
         alternative,
         allele_variants,
     )
+    if candidate_allele_prefixes:
+        candidate_only &= _genotype_variant_ids_for_prefixes(
+            candidate,
+            allele_variants,
+            candidate_allele_prefixes,
+        )
     unsupported = 0
     net_penalty = 0.0
     for variant_id in candidate_only:
@@ -463,6 +501,8 @@ def select_against_unsupported_candidate_only_variants(
     min_net_delta: float = 20.0,
     negative_threshold: float = 5.0,
     max_positive: float = 1.0,
+    selected_allele_prefixes: NameSet = frozenset(),
+    preserve_non_target_resolution: int = 0,
 ) -> list[str]:
     """Fallback from an overcalled genotype to a nearby less-unsupported one.
 
@@ -472,6 +512,20 @@ def select_against_unsupported_candidate_only_variants(
     """
     if result.isFail():  # type: ignore[attr-defined]
         return selected
+    if selected_allele_prefixes and not selected_has_name_prefix(
+        selected,
+        selected_allele_prefixes,
+    ):
+        return selected
+    selected_non_target_counts: Counter[str] = Counter()
+    if selected_allele_prefixes and preserve_non_target_resolution > 0:
+        selected_non_target_counts = Counter(
+            _non_prefix_resolution_key(
+                selected,
+                selected_allele_prefixes,
+                preserve_non_target_resolution,
+            )
+        )
 
     selected_key = sorted(selected)
     selected_index = 0
@@ -490,6 +544,19 @@ def select_against_unsupported_candidate_only_variants(
             continue
         if not _passes_fraction_filter(result, index, min_fraction_ratio):
             continue
+        if selected_non_target_counts:
+            alternative_non_target_counts = Counter(
+                _non_prefix_resolution_key(
+                    alternative,
+                    selected_allele_prefixes,
+                    preserve_non_target_resolution,
+                )
+            )
+            if any(
+                alternative_non_target_counts[key] < count
+                for key, count in selected_non_target_counts.items()
+            ):
+                continue
         selected_unsupported, selected_penalty = unsupported_candidate_only_evidence(
             selected,
             alternative,
@@ -498,6 +565,7 @@ def select_against_unsupported_candidate_only_variants(
             negative,
             negative_threshold,
             max_positive,
+            selected_allele_prefixes,
         )
         alternative_unsupported, alternative_penalty = unsupported_candidate_only_evidence(
             alternative,
@@ -507,6 +575,7 @@ def select_against_unsupported_candidate_only_variants(
             negative,
             negative_threshold,
             max_positive,
+            selected_allele_prefixes,
         )
         unsupported_delta = selected_unsupported - alternative_unsupported
         net_delta = selected_penalty - alternative_penalty

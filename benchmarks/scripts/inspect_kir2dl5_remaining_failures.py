@@ -45,7 +45,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--candidate-method",
-        default="enhancedgate_kir2dl5guard_geneaware",
+        default="enhancedgate_kir2dl5_kir2ds5unsupported_geneaware",
         help="Candidate method to audit.",
     )
     parser.add_argument(
