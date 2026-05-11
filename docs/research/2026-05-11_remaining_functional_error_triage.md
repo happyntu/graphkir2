@@ -9,7 +9,7 @@ Command:
 python benchmarks/scripts/inspect_remaining_functional_errors.py
 ```
 
-Candidate method: `enhancedgate_kir2dl5_kir2ds5unsupported_geneaware`
+Candidate method: `enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_geneaware`
 Full TSV: `benchmarks/results/functional-stress-sweep/remaining_functional_errors.tsv`
 
 ## Summary
@@ -17,16 +17,12 @@ Full TSV: `benchmarks/results/functional-stress-sweep/remaining_functional_error
 | gene | resolution | cause hint | wrong-call rows |
 |---|---:|---:|---:|
 | KIR2DL1 | 5 | shared_with_discard | 1 |
-| KIR2DS3 | 3 | shared_with_discard | 1 |
 | KIR2DS3 | 5 | all_methods_disagree_or_shifted | 1 |
-| KIR2DS3 | 5 | shared_with_discard | 1 |
 
 ## Detail
 
 | panel | sample | gene | res | cause hint | truth | candidate | missing | extra | discard | likelihood | enhancedgate |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| synthetic-difficult5x12 | 03 | KIR2DS3 | 3 | shared_with_discard | KIR2DS3*011_KIR2DS3*016 | KIR2DS3*002_KIR2DS3*011 | KIR2DS3*016 | KIR2DS3*002 | KIR2DS3*002_KIR2DS3*011 | KIR2DS3*002_KIR2DS3*011 | KIR2DS3*002_KIR2DS3*011 |
-| synthetic-difficult5x12 | 03 | KIR2DS3 | 5 | shared_with_discard | KIR2DS3*011_KIR2DS3*016 | KIR2DS3*00201_KIR2DS3*011 | KIR2DS3*016 | KIR2DS3*00201 | KIR2DS3*00201_KIR2DS3*011 | KIR2DS3*00201_KIR2DS3*011 | KIR2DS3*00201_KIR2DS3*011 |
 | synthetic-difficult5x12-seed5102 | 00 | KIR2DS3 | 5 | all_methods_disagree_or_shifted | KIR2DS3*00103_KIR2DS3*00113 | KIR2DS3*00103_KIR2DS3*00103 | KIR2DS3*00113 | KIR2DS3*00103 | KIR2DS3*00108_KIR2DS3*00113 | KIR2DS3*00103_KIR2DS3*00201 | KIR2DS3*00103_KIR2DS3*00103 |
 | synthetic-functional8x6 | 05 | KIR2DL1 | 5 | shared_with_discard | KIR2DL1*00302_KIR2DL1*00302 | KIR2DL1*00302_KIR2DL1*00303 | KIR2DL1*00302 | KIR2DL1*00303 | KIR2DL1*00302_KIR2DL1*00303 | KIR2DL1*00201_KIR2DL1*00302 | KIR2DL1*00302_KIR2DL1*00401 |
 

@@ -19,6 +19,7 @@ DEFAULT_METHODS = (
     "enhancedgate_functionalguard_geneaware",
     "enhancedgate_kir2dl5guard_geneaware",
     "enhancedgate_kir2dl5_kir2ds5unsupported_geneaware",
+    "enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_geneaware",
 )
 
 
@@ -34,7 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--candidate-method",
-        default="enhancedgate_kir2dl5_kir2ds5unsupported_geneaware",
+        default="enhancedgate_kir2dl5_kir2ds5unsupported_kir2ds3rankwide_geneaware",
         help="Method whose remaining functional errors should be triaged.",
     )
     parser.add_argument(

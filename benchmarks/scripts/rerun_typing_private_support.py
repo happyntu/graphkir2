@@ -217,6 +217,58 @@ def build_parser() -> argparse.ArgumentParser:
         default=1.0,
         help="Maximum positive support allowed for targeted unsupported candidate-only variants.",
     )
+    parser.add_argument(
+        "--rankwide-unsupported-overcall-guard-genes",
+        default="",
+        help="Optional genes allowed to run a second rank-wide targeted unsupported-overcall guard.",
+    )
+    parser.add_argument(
+        "--rankwide-unsupported-overcall-guard-alleles",
+        default="",
+        help="Allele prefixes required in the selected call before the rank-wide guard runs.",
+    )
+    parser.add_argument(
+        "--rankwide-unsupported-overcall-guard-window",
+        type=float,
+        default=400.0,
+        help="Maximum likelihood gap for rank-wide unsupported-overcall alternatives.",
+    )
+    parser.add_argument(
+        "--rankwide-unsupported-overcall-guard-min-unsupported-delta",
+        type=int,
+        default=1,
+        help="Minimum targeted unsupported-variant improvement required by the rank-wide guard.",
+    )
+    parser.add_argument(
+        "--rankwide-unsupported-overcall-guard-min-net-delta",
+        type=float,
+        default=20.0,
+        help="Minimum targeted negative-minus-positive support improvement required by the rank-wide guard.",
+    )
+    parser.add_argument(
+        "--rankwide-unsupported-overcall-guard-max-selected-support",
+        type=float,
+        default=0.0,
+        help="Maximum selected private-support score allowed before the rank-wide guard runs.",
+    )
+    parser.add_argument(
+        "--rankwide-unsupported-overcall-guard-preserve-non-target-resolution",
+        type=int,
+        default=0,
+        help="Optional allele field length that rank-wide alternatives must preserve outside the target prefixes.",
+    )
+    parser.add_argument(
+        "--rankwide-unsupported-overcall-guard-negative-threshold",
+        type=float,
+        default=5.0,
+        help="Negative support threshold for rank-wide unsupported candidate-only variants.",
+    )
+    parser.add_argument(
+        "--rankwide-unsupported-overcall-guard-max-positive",
+        type=float,
+        default=1.0,
+        help="Maximum positive support allowed for rank-wide unsupported candidate-only variants.",
+    )
     return parser
 
 
@@ -378,6 +430,12 @@ def main() -> None:
     )
     targeted_unsupported_overcall_guard_alleles = parse_name_set(
         args.targeted_unsupported_overcall_guard_alleles
+    )
+    rankwide_unsupported_overcall_guard_genes = parse_gene_set(
+        args.rankwide_unsupported_overcall_guard_genes
+    )
+    rankwide_unsupported_overcall_guard_alleles = parse_name_set(
+        args.rankwide_unsupported_overcall_guard_alleles
     )
     gene_base_top_ns = parse_gene_top_n_spec(gene_base_top_n_spec)
     has_conditional_gate = bool(
@@ -631,6 +689,34 @@ def main() -> None:
                     args.targeted_unsupported_overcall_guard_max_positive,
                     targeted_unsupported_overcall_guard_alleles,
                     args.targeted_unsupported_overcall_guard_preserve_non_target_resolution,
+                )
+            rankwide_selected_support = 0.0
+            if gene_name in rankwide_unsupported_overcall_guard_genes:
+                rankwide_selected_support = private_support_score(
+                    selected,
+                    allele_variants,
+                    positive,
+                    negative,
+                )
+            if (
+                gene_name in rankwide_unsupported_overcall_guard_genes
+                and rankwide_selected_support
+                <= args.rankwide_unsupported_overcall_guard_max_selected_support
+            ):
+                selected = select_against_unsupported_candidate_only_variants(
+                    result,
+                    selected,
+                    allele_variants,
+                    positive,
+                    negative,
+                    sample.select_min_fraction_ratio,
+                    args.rankwide_unsupported_overcall_guard_window,
+                    args.rankwide_unsupported_overcall_guard_min_unsupported_delta,
+                    args.rankwide_unsupported_overcall_guard_min_net_delta,
+                    args.rankwide_unsupported_overcall_guard_negative_threshold,
+                    args.rankwide_unsupported_overcall_guard_max_positive,
+                    rankwide_unsupported_overcall_guard_alleles,
+                    args.rankwide_unsupported_overcall_guard_preserve_non_target_resolution,
                 )
             if gene_name in highest_suffix_tie_break_genes:
                 selected = select_with_highest_suffix_tie_break(
