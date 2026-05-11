@@ -85,8 +85,9 @@ Use `benchmarks/scripts/prepare_hprc_real_mini.py` to create a real mini HPRC
 manifest and generated preset from local FASTQs. If no paired FASTQs are found,
 the script writes an availability report instead of creating a misleading
 benchmark preset. The generated enhancedgate preset carries
-`allele_base_top_n = 600` so full-gene reruns keep high `top_n` only for target
-genes.
+`allele_base_top_n = 1000` so full-gene reruns keep high `top_n` only for target
+genes. Synthetic profiling found `600` was too aggressive for
+`synthetic-functional8x6` KIR2DL1.
 
 ### Method comparisons to support
 

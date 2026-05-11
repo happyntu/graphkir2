@@ -15,7 +15,7 @@
   "allele_exon_weight": 2.0,
   "allele_ambiguity_neutral_prob": 0.999,
   "allele_select_min_fraction_ratio": 0.7,
-  "allele_base_top_n": 600,
+  "allele_base_top_n": 1000,
   "allele_cross_gene_neutralization_groups": "KIR2DS3/KIR2DS5",
   "allele_private_support_genes": "KIR2DS3",
   "allele_private_support_lambda": 10.0,

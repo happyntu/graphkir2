@@ -212,7 +212,7 @@ Current synthetic functional-target surface:
 * `top_n = 5000` for typing sweeps
 * `allele_base_top_n = 0` for reduced synthetic panels, which keeps all genes at
   the high `top_n`
-* `allele_base_top_n = 600` for full-gene smoke or real-data sanity reruns, so
+* `allele_base_top_n = 1000` for full-gene smoke or real-data sanity reruns, so
   only target genes keep the high `top_n` and non-target genes stay at legacy
   search depth on `ab_2dl1s1`
 * targeted `KIR2DS3` private-support reranking
@@ -311,9 +311,11 @@ small real-data sanity panel, not broad real-data benchmarking.
 Operational note: `benchmarks/configs/hprc_real_sanity.json` currently uses
 `examples/cohort.csv`, so it is an examples-format smoke run rather than a valid
 HPRC accuracy benchmark. Use it to verify the full legacy/rerun plumbing only.
-For enhancedgate smoke on that full gene panel, use `--top-n 5000 --base-top-n
-600` or the committed `benchmarks/configs/hprc_real_sanity_enhancedgate.json`;
-applying top5000 to every gene can exceed a 15GB WSL memory limit.
+For enhancedgate smoke on that full gene panel, use the committed
+`benchmarks/configs/hprc_real_sanity_enhancedgate.json`; applying top5000 to
+every gene can exceed a 15GB WSL memory limit. Synthetic profiling showed
+`base_top_n = 600` can regress `synthetic-functional8x6` KIR2DL1, while
+`base_top_n = 1000` recovered the observed aggregate 3/5/7-digit F1.
 
 To prepare a real HPRC mini sanity run, use
 `benchmarks/scripts/prepare_hprc_real_mini.py`. It checks
@@ -321,7 +323,7 @@ To prepare a real HPRC mini sanity run, use
 discovers paired FASTQs under `GRAPHKIR_HPRC_FASTQ_ROOTS`,
 `HPRC_FASTQ_ROOT`, or the default local roots, and writes ignored generated
 manifest/config files only when real sample data exists. It writes a baseline
-config and an enhancedgate config with `allele_base_top_n = 600`. As of
+config and an enhancedgate config with `allele_base_top_n = 1000`. As of
 2026-05-11, this workspace does not contain local HPRC KIR FASTQs or `data_real`
 intermediates.
 
