@@ -312,6 +312,14 @@ HPRC accuracy benchmark. Use it to verify the full legacy/rerun plumbing only.
 For enhancedgate smoke on that full gene panel, use `--top-n 5000 --base-top-n
 600`; applying top5000 to every gene can exceed a 15GB WSL memory limit.
 
+To prepare a real HPRC mini sanity run, use
+`benchmarks/scripts/prepare_hprc_real_mini.py`. It checks
+`data/cohorts/hprc.csv` against `data/groundtruth/hprc_summary_v1_2_e.tsv`,
+discovers paired FASTQs under `GRAPHKIR_HPRC_FASTQ_ROOTS`,
+`HPRC_FASTQ_ROOT`, or the default local roots, and writes ignored generated
+manifest/config files only when real sample data exists. As of 2026-05-11, this
+workspace does not contain local HPRC KIR FASTQs or `data_real` intermediates.
+
 ## Synthetic-First Workflow
 
 For `graphkir2`, prefer a synthetic-first benchmark and tuning loop:

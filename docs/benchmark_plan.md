@@ -81,6 +81,11 @@ points at `examples/cohort.csv`. Treat its evaluation as plumbing validation
 only, not as HPRC accuracy evidence, until the manifest points at real HPRC
 FASTQ/intermediate data with matching truth sample IDs.
 
+Use `benchmarks/scripts/prepare_hprc_real_mini.py` to create a real mini HPRC
+manifest and generated preset from local FASTQs. If no paired FASTQs are found,
+the script writes an availability report instead of creating a misleading
+benchmark preset.
+
 ### Method comparisons to support
 
 * legacy `graphkir` vs `graphkir2`
