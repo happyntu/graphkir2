@@ -331,6 +331,23 @@ matching discard's remaining error, so the fallback is a functional regression
 guard rather than a full 5-digit KIR2DL1 solution. Do not promote it as a global
 default until it has real-data sanity coverage.
 
+Remaining functional-error triage is documented in
+`docs/research/2026-05-11_remaining_functional_error_triage.md` and generated
+by `benchmarks/scripts/inspect_remaining_functional_errors.py`. For the current
+candidate, the highest-priority regressions are:
+
+* `KIR2DS5`: two 3-digit and two 5-digit candidate regressions where the
+  likelihood/enhancedgate path promotes `KIR2DS5*027` over a discard-correct
+  `KIR2DS5*002` call
+* `KIR2DS3`: one 5-digit candidate regression; treat this as suballele cleanup,
+  not a reason to undo the current 3-digit gains
+
+Next method work should add a targeted `KIR2DS5` promotion guard before changing
+the broader `KIR2DS3/KIR2DS5` ambiguity handling. Keep `KIR2DL5A/B` separate
+from that gate work because the remaining rows include copy-number or A/B
+placement mismatches shared by current methods. KIR2DL1 3-digit is currently
+fixed; the remaining KIR2DL1 issue is one shared 5-digit suballele miss.
+
 Operational note: `benchmarks/configs/hprc_real_sanity.json` currently uses
 `examples/cohort.csv`, so it is an examples-format smoke run rather than a valid
 HPRC accuracy benchmark. Use it to verify the full legacy/rerun plumbing only.
