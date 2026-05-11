@@ -127,6 +127,21 @@ DEFAULT_METHODS: tuple[MethodSpec, ...] = (
         functional_discard_fallback_promoted_alleles="KIR2DS5*027",
         functional_discard_fallback_protected_alleles="KIR2DS5*002",
     ),
+    MethodSpec(
+        name="enhancedgate_functionalguard_geneaware",
+        runner="private_support",
+        config_suffix="-conditional-kir2ds3-enhancedgate",
+        multi_map_mode="likelihood",
+        top_n=5000,
+        base_top_n=600,
+        gene_base_top_ns="KIR2DL1:1000",
+        functional_discard_fallback_genes="KIR2DL1,KIR2DS5,KIR2DS3",
+        functional_discard_fallback_resolution=3,
+        functional_discard_fallback_max_score=-100.0,
+        functional_discard_fallback_min_score_delta=20.0,
+        functional_discard_fallback_promoted_alleles="KIR2DS5*027,KIR2DS3*00109",
+        functional_discard_fallback_protected_alleles="KIR2DS5*002,KIR2DS3*00103",
+    ),
 )
 
 
@@ -525,16 +540,16 @@ def render_markdown(
     regressions = functional_regressions(
         per_gene_rows,
         baseline_method="discard",
-        candidate_method="enhancedgate_kir2dl1_kir2ds5guard_geneaware",
+        candidate_method="enhancedgate_functionalguard_geneaware",
     )
     gains = functional_gains(
         per_gene_rows,
         baseline_method="discard",
-        candidate_method="enhancedgate_kir2dl1_kir2ds5guard_geneaware",
+        candidate_method="enhancedgate_functionalguard_geneaware",
     )
     remaining_errors = remaining_functional_errors(
         per_gene_rows,
-        method="enhancedgate_kir2dl1_kir2ds5guard_geneaware",
+        method="enhancedgate_functionalguard_geneaware",
     )
     lines = [
         "# Functional Stress Seed Sweep",
@@ -601,7 +616,7 @@ def render_markdown(
     lines.extend(
         [
             "",
-            "## KIR2DL1 Fallback + KIR2DS5 Guard Gene-aware Vs Discard",
+            "## Functional Guard Gene-aware Vs Discard",
             "",
         ]
     )
@@ -610,7 +625,7 @@ def render_markdown(
             [
                 "Per-gene 3/5-digit regressions versus discard:",
                 "",
-                "| panel | gene | metric | discard F1 | fallback gene-aware F1 | delta |",
+                "| panel | gene | metric | discard F1 | candidate F1 | delta |",
                 "|---|---:|---:|---:|---:|---:|",
             ]
         )
@@ -637,7 +652,7 @@ def render_markdown(
             "",
             "Per-gene 3/5-digit gains versus discard:",
             "",
-            "| panel | gene | metric | discard F1 | fallback gene-aware F1 | delta |",
+            "| panel | gene | metric | discard F1 | candidate F1 | delta |",
             "|---|---:|---:|---:|---:|---:|",
         ]
     )
@@ -660,7 +675,7 @@ def render_markdown(
     lines.extend(
         [
             "",
-            "Remaining fallback gene-aware 3/5-digit errors:",
+            "Remaining functional-guard 3/5-digit errors:",
             "",
             "| panel | gene | metric | F1 |",
             "|---|---:|---:|---:|",
@@ -685,10 +700,10 @@ def render_markdown(
             "",
             "## Decision",
             "",
-            "`enhancedgate_kir2dl1_kir2ds5guard_geneaware` resolves the strict",
-            "`synthetic-functional8x6` KIR2DL1 3-digit regression while preserving",
-            "the enhancedgate KIR2DS3/KIR2DS4 gains, adds a targeted KIR2DS5",
-            "promotion guard, and keeps the gene-aware top-n runtime setting.",
+            "`enhancedgate_functionalguard_geneaware` resolves the strict",
+            "`synthetic-functional8x6` KIR2DL1 3-digit regression, keeps the",
+            "KIR2DS5 promotion guard, adds a narrow KIR2DS3 suballele guard,",
+            "and keeps the gene-aware top-n runtime setting.",
             "`likelihood_top5000` alone is not viable because it loses substantial",
             "3/5-digit accuracy on the difficult5x12 seed panels.",
             "KIR2DL1 still has one 5-digit miss matching discard's remaining error;",

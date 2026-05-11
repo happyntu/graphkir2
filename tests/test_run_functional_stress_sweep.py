@@ -93,6 +93,21 @@ def test_build_typing_command_adds_functional_promotion_guard_overrides() -> Non
     assert "KIR2DL1,KIR2DS5" in command
 
 
+def test_build_typing_command_adds_suballele_guard_overrides() -> None:
+    method = [
+        item
+        for item in DEFAULT_METHODS
+        if item.name == "enhancedgate_functionalguard_geneaware"
+    ][0]
+    paths = paths_for("synthetic-x", method, Path("results"))
+
+    command = build_typing_command(method, paths)
+
+    assert "KIR2DL1,KIR2DS5,KIR2DS3" in command
+    assert "KIR2DS5*027,KIR2DS3*00109" in command
+    assert "KIR2DS5*002,KIR2DS3*00103" in command
+
+
 def test_functional_regressions_compares_only_three_and_five_digit() -> None:
     rows = [
         {

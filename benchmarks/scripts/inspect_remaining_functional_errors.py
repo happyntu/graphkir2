@@ -16,6 +16,7 @@ DEFAULT_METHODS = (
     "enhancedgate_geneaware",
     "enhancedgate_kir2dl1fallback_geneaware",
     "enhancedgate_kir2dl1_kir2ds5guard_geneaware",
+    "enhancedgate_functionalguard_geneaware",
 )
 
 
@@ -31,7 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--candidate-method",
-        default="enhancedgate_kir2dl1_kir2ds5guard_geneaware",
+        default="enhancedgate_functionalguard_geneaware",
         help="Method whose remaining functional errors should be triaged.",
     )
     parser.add_argument(
@@ -378,13 +379,14 @@ def render_markdown(
             "",
             "* `shared_with_discard` means the current candidate did not introduce the error; fixing it probably requires new gene-specific evidence handling rather than undoing enhancedgate.",
             f"* `candidate_regression` is the highest-priority blocker because discard is correct and the candidate is wrong. Current candidate regressions: {regression_text}.",
+            "* If candidate regressions are `none`, next work should target shared or unresolved failure patterns rather than adding broader regression guards.",
             "* Current remaining errors are concentrated in KIR2DL5A/B, KIR2DS3, KIR2DS5, and one KIR2DL1 5-digit case.",
             "* The KIR2DL1 3-digit regression is absent here; only a 5-digit suballele miss remains, matching discard behavior.",
             "",
             "## Recommended Next Method Work",
             "",
             "* If KIR2DS5 candidate regressions remain, tighten the KIR2DS5*027 promotion guard rather than broadening KIR2DS3/KIR2DS5 neutralization.",
-            "* Treat KIR2DS3 residuals as mostly 5-digit suballele cleanup; avoid broad KIR2DS3/KIR2DS5 neutralization that could erase the current KIR2DS3 3-digit gains.",
+            "* If KIR2DS3 candidate regressions remain, inspect suballele-specific private support before changing the broader KIR2DS3 rescue gate.",
             "* Keep KIR2DL5A/B separate from the KIR2DS3/KIR2DS5 gate work because its errors include copy-number or A/B placement mismatches shared by all current methods.",
         ]
     )

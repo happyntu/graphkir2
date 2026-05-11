@@ -333,21 +333,19 @@ def apply_functional_promotion_guard(
     protected_alleles: NameSet,
     resolution: int = 3,
 ) -> list[str]:
-    """Replace configured promoted calls with protected functional evidence.
+    """Replace configured promoted calls with protected discard evidence.
 
     This guard is intentionally narrower than a full discard fallback. It only
     fires when likelihood introduced a configured promoted allele prefix and
     discard has extra copies of a configured protected prefix. When possible,
     it reuses an already selected protected allele suffix to avoid unnecessary
-    7-digit churn while fixing the functional class.
+    7-digit churn while fixing the targeted functional or suballele class.
     """
     if not promoted_alleles or not protected_alleles:
         return selected
     selected_key = _functional_resolution_key(selected, resolution)
     discard_key = _functional_resolution_key(discard_selected, resolution)
     if not selected_key or not discard_key or len(selected_key) != len(discard_key):
-        return selected
-    if selected_key == discard_key:
         return selected
 
     selected_promoted = _name_prefix_counts(selected, promoted_alleles)

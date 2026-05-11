@@ -340,6 +340,18 @@ def test_functional_promotion_guard_ignores_discard_without_protected_class() ->
     assert guarded == ["KIR2DS5*0210102", "KIR2DS5*0270102"]
 
 
+def test_functional_promotion_guard_can_fix_same_three_digit_suballele_promotion() -> None:
+    guarded = apply_functional_promotion_guard(
+        ["KIR2DS3*00109", "KIR2DS3*020"],
+        ["KIR2DS3*0010303", "KIR2DS3*020"],
+        parse_name_set("KIR2DS3*00109"),
+        parse_name_set("KIR2DS3*00103"),
+        resolution=3,
+    )
+
+    assert guarded == ["KIR2DS3*0010303", "KIR2DS3*020"]
+
+
 def test_highest_suffix_tie_break_keeps_same_five_digit_call() -> None:
     selected = select_with_highest_suffix_tie_break(
         DummyTieResult(),
@@ -401,12 +413,12 @@ def test_typing_plan_carries_private_support_config() -> None:
         private_support_discard_fallback_introduced_max_ratio=0.9,
         private_support_discard_fallback_max_score=-20.0,
         private_support_discard_fallback_residual_min_ratio=0.7,
-        functional_discard_fallback_genes="KIR2DL1,KIR2DS5",
+        functional_discard_fallback_genes="KIR2DL1,KIR2DS5,KIR2DS3",
         functional_discard_fallback_resolution=3,
         functional_discard_fallback_max_score=-100.0,
         functional_discard_fallback_min_score_delta=20.0,
-        functional_discard_fallback_promoted_alleles="KIR2DS5*027",
-        functional_discard_fallback_protected_alleles="KIR2DS5*002",
+        functional_discard_fallback_promoted_alleles="KIR2DS5*027,KIR2DS3*00109",
+        functional_discard_fallback_protected_alleles="KIR2DS5*002,KIR2DS3*00103",
         highest_suffix_tie_break_genes="KIR2DS4",
     )
 
@@ -426,12 +438,12 @@ def test_typing_plan_carries_private_support_config() -> None:
     assert plan.private_support_discard_fallback_introduced_max_ratio == 0.9
     assert plan.private_support_discard_fallback_max_score == -20.0
     assert plan.private_support_discard_fallback_residual_min_ratio == 0.7
-    assert plan.functional_discard_fallback_genes == "KIR2DL1,KIR2DS5"
+    assert plan.functional_discard_fallback_genes == "KIR2DL1,KIR2DS5,KIR2DS3"
     assert plan.functional_discard_fallback_resolution == 3
     assert plan.functional_discard_fallback_max_score == -100.0
     assert plan.functional_discard_fallback_min_score_delta == 20.0
-    assert plan.functional_discard_fallback_promoted_alleles == "KIR2DS5*027"
-    assert plan.functional_discard_fallback_protected_alleles == "KIR2DS5*002"
+    assert plan.functional_discard_fallback_promoted_alleles == "KIR2DS5*027,KIR2DS3*00109"
+    assert plan.functional_discard_fallback_protected_alleles == "KIR2DS5*002,KIR2DS3*00103"
     assert plan.highest_suffix_tie_break_genes == "KIR2DS4"
     assert plan.samples[0].private_support_genes == "KIR2DS3"
     assert plan.samples[0].base_top_n == 600
@@ -442,10 +454,10 @@ def test_typing_plan_carries_private_support_config() -> None:
     assert plan.samples[0].private_support_discard_fallback_introduced_max_ratio == 0.9
     assert plan.samples[0].private_support_discard_fallback_max_score == -20.0
     assert plan.samples[0].private_support_discard_fallback_residual_min_ratio == 0.7
-    assert plan.samples[0].functional_discard_fallback_genes == "KIR2DL1,KIR2DS5"
+    assert plan.samples[0].functional_discard_fallback_genes == "KIR2DL1,KIR2DS5,KIR2DS3"
     assert plan.samples[0].functional_discard_fallback_resolution == 3
     assert plan.samples[0].functional_discard_fallback_max_score == -100.0
     assert plan.samples[0].functional_discard_fallback_min_score_delta == 20.0
-    assert plan.samples[0].functional_discard_fallback_promoted_alleles == "KIR2DS5*027"
-    assert plan.samples[0].functional_discard_fallback_protected_alleles == "KIR2DS5*002"
+    assert plan.samples[0].functional_discard_fallback_promoted_alleles == "KIR2DS5*027,KIR2DS3*00109"
+    assert plan.samples[0].functional_discard_fallback_protected_alleles == "KIR2DS5*002,KIR2DS3*00103"
     assert plan.samples[0].highest_suffix_tie_break_genes == "KIR2DS4"

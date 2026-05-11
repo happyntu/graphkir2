@@ -318,6 +318,8 @@ seed panels showed:
   `0.9881 / 0.9842 / 0.9461`
 * enhancedgate + `KIR2DL1` fallback + `KIR2DS5` promotion guard gene-aware mean:
   `0.9905 / 0.9866 / 0.9473`
+* enhancedgate functional guard gene-aware mean:
+  `0.9905 / 0.9878 / 0.9485`
 
 The `KIR2DL1` fallback candidate enables:
 
@@ -333,32 +335,32 @@ matching discard's remaining error, so the fallback is a functional regression
 guard rather than a full 5-digit KIR2DL1 solution. Do not promote it as a global
 default until it has real-data sanity coverage.
 
-The current synthetic lead is
-`enhancedgate_kir2dl1_kir2ds5guard_geneaware`. It keeps the `KIR2DL1`
-functional fallback and adds a narrow `KIR2DS5` promotion guard:
+The current synthetic lead is `enhancedgate_functionalguard_geneaware`. It keeps
+the `KIR2DL1` functional fallback and adds narrow promotion guards for `KIR2DS5`
+and `KIR2DS3`:
 
-* `allele_functional_discard_fallback_genes = KIR2DL1,KIR2DS5`
-* `allele_functional_discard_fallback_promoted_alleles = KIR2DS5*027`
-* `allele_functional_discard_fallback_protected_alleles = KIR2DS5*002`
+* `allele_functional_discard_fallback_genes = KIR2DL1,KIR2DS5,KIR2DS3`
+* `allele_functional_discard_fallback_promoted_alleles = KIR2DS5*027,KIR2DS3*00109`
+* `allele_functional_discard_fallback_protected_alleles = KIR2DS5*002,KIR2DS3*00103`
 
-This guard fires only when likelihood introduces `KIR2DS5*027` and discard has
-extra protected `KIR2DS5*002` copies. When possible, it reuses an already
-selected protected full allele suffix instead of blindly copying discard's
-7-digit suffix. In the functional stress sweep, it fixes the seed5101 KIR2DS5
-candidate regressions and improves that panel from `0.9750 / 0.9750 / 0.9667`
-to `0.9917 / 0.9917 / 0.9750` without reducing the other panel aggregates.
+The guard fires only when likelihood introduces a configured promoted allele and
+discard has extra protected copies. When possible, it reuses an already selected
+protected full allele suffix instead of blindly copying discard's 7-digit suffix.
+In the functional stress sweep, it fixes the seed5101 KIR2DS5 candidate
+regressions and the seed5103 KIR2DS3 5-digit suballele regression. Seed5101
+improves from `0.9750 / 0.9750 / 0.9667` to `0.9917 / 0.9917 / 0.9750`; seed5103
+improves from `0.9917 / 0.9833 / 0.9417` to `0.9917 / 0.9917 / 0.9500`.
 
 Remaining functional-error triage is documented in
 `docs/research/2026-05-11_remaining_functional_error_triage.md` and generated
 by `benchmarks/scripts/inspect_remaining_functional_errors.py`. For the current
-candidate, KIR2DS5 candidate regressions are gone. The only remaining
-candidate regression is one `KIR2DS3` 5-digit suballele row; treat it as
-suballele cleanup, not a reason to undo the current 3-digit gains. Remaining
-KIR2DS5 rows are now shared-with-discard or unresolved likelihood patterns.
-Keep `KIR2DL5A/B` separate from the `KIR2DS3/KIR2DS5` gate work because the
-remaining rows include copy-number or A/B placement mismatches shared by
-current methods. KIR2DL1 3-digit is fixed; the remaining KIR2DL1 issue is one
-shared 5-digit suballele miss.
+candidate, there are no remaining `candidate_regression` rows. Remaining KIR2DS3
+and KIR2DS5 rows are now shared-with-discard or unresolved likelihood patterns,
+so do not broaden the KIR2DS3/KIR2DS5 guard without new sample-level evidence.
+Keep `KIR2DL5A/B` separate from that work because the remaining rows include
+copy-number or A/B placement mismatches shared by current methods. KIR2DL1
+3-digit is fixed; the remaining KIR2DL1 issue is one shared 5-digit suballele
+miss.
 
 Operational note: `benchmarks/configs/hprc_real_sanity.json` currently uses
 `examples/cohort.csv`, so it is an examples-format smoke run rather than a valid
@@ -367,8 +369,8 @@ For enhancedgate smoke on that full gene panel, use the committed
 `benchmarks/configs/hprc_real_sanity_enhancedgate.json`; applying top5000 to
 every gene can exceed a 15GB WSL memory limit. The committed enhancedgate sanity
 config includes gene-aware top-n, the `KIR2DL1` functional fallback, and the
-`KIR2DS5` promotion guard. Synthetic profiling showed plain `base_top_n = 600`
-can regress
+`KIR2DS5/KIR2DS3` promotion guards. Synthetic profiling showed plain
+`base_top_n = 600` can regress
 `synthetic-functional8x6` KIR2DL1, while the gene-aware setting
 `base_top_n = 600` plus `KIR2DL1:1000` recovered the observed aggregate
 3/5/7-digit F1 and improved runtime.
@@ -381,7 +383,7 @@ discovers paired FASTQs under `GRAPHKIR_HPRC_FASTQ_ROOTS`,
 manifest/config files only when real sample data exists. It writes a baseline
 config and an enhancedgate config with `allele_base_top_n = 600`,
 `allele_gene_base_top_ns = KIR2DL1:1000`, the `KIR2DL1` functional fallback, and
-the `KIR2DS5` promotion guard.
+the `KIR2DS5/KIR2DS3` promotion guards.
 As of
 2026-05-11, this workspace does not contain local HPRC KIR FASTQs or `data_real`
 intermediates.

@@ -465,7 +465,10 @@ def main() -> None:
                     functional_fallback_promoted_alleles
                     and functional_fallback_protected_alleles
                 )
-                if selected_support <= functional_fallback_max_score or has_promotion_guard:
+                can_use_full_functional_fallback = (
+                    selected_support <= functional_fallback_max_score
+                )
+                if can_use_full_functional_fallback or has_promotion_guard:
                     discard_reads_data = removeMultipleMapped(deepcopy(raw_reads_data))
                     discard_gene_reads = groupReads(discard_reads_data["reads"])
                     if gene in discard_gene_reads:
@@ -490,7 +493,7 @@ def main() -> None:
                             fallback_positive,
                             fallback_negative,
                         )
-                        if should_use_functional_discard_fallback(
+                        if can_use_full_functional_fallback and should_use_functional_discard_fallback(
                             selected,
                             fallback_selected,
                             selected_support,
