@@ -1,0 +1,143 @@
+from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "benchmarks" / "scripts"))
+
+from run_functional_stress_sweep import (  # noqa: E402
+    DEFAULT_METHODS,
+    MethodSpec,
+    build_typing_command,
+    functional_gains,
+    functional_regressions,
+    paths_for,
+    remaining_functional_errors,
+    select_methods,
+)
+
+
+def test_select_methods_preserves_default_order() -> None:
+    methods = select_methods(["enhancedgate_geneaware", "discard"])
+
+    assert [method.name for method in methods] == ["discard", "enhancedgate_geneaware"]
+
+
+def test_paths_for_uses_config_suffix_and_stable_output_names() -> None:
+    method = MethodSpec(
+        name="enhancedgate_geneaware",
+        runner="private_support",
+        config_suffix="-conditional-kir2ds3-enhancedgate",
+        multi_map_mode="likelihood",
+        top_n=5000,
+        base_top_n=600,
+        gene_base_top_ns="KIR2DL1:1000",
+    )
+
+    paths = paths_for("synthetic-x", method, Path("results"))
+
+    assert paths.config == Path(
+        "benchmarks/configs/synthetic-x-conditional-kir2ds3-enhancedgate.json"
+    )
+    assert paths.prediction_tsv == Path("results/synthetic-x.enhancedgate_geneaware.allele.tsv")
+    assert paths.bundle_dir == Path("results/synthetic-x.enhancedgate_geneaware.bundle")
+
+
+def test_build_typing_command_adds_geneaware_overrides() -> None:
+    method = [item for item in DEFAULT_METHODS if item.name == "enhancedgate_geneaware"][0]
+    paths = paths_for("synthetic-x", method, Path("results"))
+
+    command = build_typing_command(method, paths)
+
+    assert "benchmarks/scripts/rerun_typing_private_support.py" in command
+    assert command[-4:] == ["--base-top-n", "600", "--gene-base-top-ns", "KIR2DL1:1000"]
+
+
+def test_functional_regressions_compares_only_three_and_five_digit() -> None:
+    rows = [
+        {
+            "label": "panel",
+            "method": "discard",
+            "gene": "KIR2DS3",
+            "three_digit_f1": "1.000000",
+            "five_digit_f1": "0.900000",
+            "seven_digit_f1": "0.900000",
+        },
+        {
+            "label": "panel",
+            "method": "candidate",
+            "gene": "KIR2DS3",
+            "three_digit_f1": "0.950000",
+            "five_digit_f1": "0.950000",
+            "seven_digit_f1": "0.100000",
+        },
+    ]
+
+    regressions = functional_regressions(rows, "discard", "candidate")
+
+    assert regressions == [
+        {
+            "label": "panel",
+            "gene": "KIR2DS3",
+            "metric": "three_digit",
+            "baseline_f1": "1.000000",
+            "candidate_f1": "0.950000",
+            "delta": "-0.050000",
+        }
+    ]
+
+
+def test_functional_gains_compares_only_three_and_five_digit() -> None:
+    rows = [
+        {
+            "label": "panel",
+            "method": "discard",
+            "gene": "KIR2DS3",
+            "three_digit_f1": "0.900000",
+            "five_digit_f1": "0.900000",
+            "seven_digit_f1": "1.000000",
+        },
+        {
+            "label": "panel",
+            "method": "candidate",
+            "gene": "KIR2DS3",
+            "three_digit_f1": "0.950000",
+            "five_digit_f1": "0.900000",
+            "seven_digit_f1": "0.100000",
+        },
+    ]
+
+    gains = functional_gains(rows, "discard", "candidate")
+
+    assert gains == [
+        {
+            "label": "panel",
+            "gene": "KIR2DS3",
+            "metric": "three_digit",
+            "baseline_f1": "0.900000",
+            "candidate_f1": "0.950000",
+            "delta": "0.050000",
+        }
+    ]
+
+
+def test_remaining_functional_errors_ignores_seven_digit() -> None:
+    rows = [
+        {
+            "label": "panel",
+            "method": "candidate",
+            "gene": "KIR2DL1",
+            "three_digit_f1": "1.000000",
+            "five_digit_f1": "0.875000",
+            "seven_digit_f1": "0.500000",
+        }
+    ]
+
+    errors = remaining_functional_errors(rows, "candidate")
+
+    assert errors == [
+        {
+            "label": "panel",
+            "gene": "KIR2DL1",
+            "metric": "five_digit",
+            "f1": "0.875000",
+        }
+    ]

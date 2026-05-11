@@ -305,8 +305,23 @@ current means are:
 * discard `KIR2DS3`: `0.9583 / 0.9271 / 0.9271`
 * enhancedgate `KIR2DS3`: `0.9896 / 0.9688 / 0.9375`
 
-Treat enhancedgate as the current synthetic lead. The next validation step is a
-small real-data sanity panel, not broad real-data benchmarking.
+Treat enhancedgate as the current aggregate synthetic lead, not as a final
+default. A broader functional stress sweep with
+`benchmarks/scripts/run_functional_stress_sweep.py` over `synthetic-functional8`,
+`synthetic-functional8x6`, `synthetic-difficult5`, and the four difficult5x12
+seed panels showed:
+
+* discard mean: `0.9693 / 0.9643 / 0.8854`
+* likelihood-only top5000 mean: `0.9437 / 0.9426 / 0.8946`
+* enhancedgate gene-aware top-n mean: `0.9866 / 0.9842 / 0.9446`
+
+However, strict per-gene comparison still shows one functional regression versus
+discard: `synthetic-functional8x6` `KIR2DL1` 3-digit F1 drops from `1.0000` to
+`0.9167` under enhancedgate/gene-aware likelihood. The next method step should
+isolate that `KIR2DL1` ambiguity-likelihood failure while preserving the
+`KIR2DS3`, `KIR2DS4`, and `KIR2DS5` gains. Do not promote enhancedgate as a
+global default until this per-gene functional regression is understood or
+accepted explicitly.
 
 Operational note: `benchmarks/configs/hprc_real_sanity.json` currently uses
 `examples/cohort.csv`, so it is an examples-format smoke run rather than a valid
