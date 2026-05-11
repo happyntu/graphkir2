@@ -38,4 +38,5 @@ Full TSV: `benchmarks/results/functional-stress-sweep/remaining_functional_error
 
 * KIR2DS5 has no remaining 3/5-digit functional rows for the current candidate; keep the targeted KIR2DS5 guard narrow unless broader panels reveal a regression.
 * Inspect the remaining KIR2DS3 rows at suballele/private-support level before changing the broader KIR2DS3 rescue gate.
+* Inspect the remaining KIR2DL1 row with the dedicated suballele audit before adding any 5-digit-only guard; KIR2DL1 3-digit is already fixed.
 * Keep any future KIR2DL5A/B work separate from the KIR2DS3/KIR2DS5 gate work.
