@@ -84,7 +84,9 @@ FASTQ/intermediate data with matching truth sample IDs.
 Use `benchmarks/scripts/prepare_hprc_real_mini.py` to create a real mini HPRC
 manifest and generated preset from local FASTQs. If no paired FASTQs are found,
 the script writes an availability report instead of creating a misleading
-benchmark preset.
+benchmark preset. The generated enhancedgate preset carries
+`allele_base_top_n = 600` so full-gene reruns keep high `top_n` only for target
+genes.
 
 ### Method comparisons to support
 

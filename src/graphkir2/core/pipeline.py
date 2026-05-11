@@ -105,6 +105,7 @@ class GraphKir2Pipeline:
                 f"typing_margin_scale={self.config.typing.margin_scale}",
                 f"typing_ambiguity_neutral_prob={self.config.typing.ambiguity_neutral_prob}",
                 f"typing_select_min_fraction_ratio={self.config.typing.select_min_fraction_ratio}",
+                f"typing_base_top_n={self.config.typing.base_top_n or '<none>'}",
                 f"typing_cross_gene_neutralization_groups={self.config.typing.cross_gene_neutralization_groups or '<none>'}",
                 f"typing_private_support_genes={self.config.typing.private_support_genes or '<none>'}",
                 f"typing_private_support_lambda={self.config.typing.private_support_lambda}",

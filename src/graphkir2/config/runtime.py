@@ -65,6 +65,7 @@ class TypingConfig:
     margin_scale: float = 2.0
     ambiguity_neutral_prob: float = 0.999
     select_min_fraction_ratio: float = 0.5
+    base_top_n: int = 0
     cross_gene_neutralization_groups: str = ""
     private_support_genes: str = ""
     private_support_lambda: float = 0.0

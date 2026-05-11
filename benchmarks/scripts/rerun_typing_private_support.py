@@ -23,8 +23,8 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help=(
-            "Optional lower top-n for genes outside private-support, fallback, "
-            "or tie-break target sets."
+            "Override config lower top-n for genes outside private-support, "
+            "fallback, or tie-break target sets."
         ),
     )
     parser.add_argument(
@@ -200,6 +200,11 @@ def main() -> None:
         if args.private_support_discard_fallback_residual_min_ratio is not None
         else run_config.typing.private_support_discard_fallback_residual_min_ratio
     )
+    base_top_n = (
+        args.base_top_n
+        if args.base_top_n is not None
+        else run_config.typing.base_top_n
+    )
     neutralize_groups = parse_gene_groups(neutralize_group_spec)
     private_support_genes = parse_gene_set(private_support_gene_spec)
     private_support_condition_alleles = parse_name_set(private_support_condition_spec)
@@ -246,7 +251,7 @@ def main() -> None:
             gene_top_n = choose_targeted_top_n(
                 gene_name,
                 args.top_n,
-                args.base_top_n,
+                base_top_n if base_top_n > 0 else None,
                 high_top_n_genes,
             )
             model = AlleleTyping(

@@ -308,6 +308,7 @@ def test_typing_plan_carries_private_support_config() -> None:
     )
     config = TypingConfig(
         cross_gene_neutralization_groups="KIR2DS3/KIR2DS5",
+        base_top_n=600,
         private_support_genes="KIR2DS3",
         private_support_lambda=10.0,
         private_support_window=50.0,
@@ -325,6 +326,7 @@ def test_typing_plan_carries_private_support_config() -> None:
     plan = AlleleTyper("typing").plan(mapping, copy_number, config, "cohort")
 
     assert plan.cross_gene_neutralization_groups == "KIR2DS3/KIR2DS5"
+    assert plan.base_top_n == 600
     assert plan.private_support_genes == "KIR2DS3"
     assert plan.private_support_lambda == 10.0
     assert plan.private_support_window == 50.0
@@ -338,6 +340,7 @@ def test_typing_plan_carries_private_support_config() -> None:
     assert plan.private_support_discard_fallback_residual_min_ratio == 0.7
     assert plan.highest_suffix_tie_break_genes == "KIR2DS4"
     assert plan.samples[0].private_support_genes == "KIR2DS3"
+    assert plan.samples[0].base_top_n == 600
     assert plan.samples[0].private_support_condition_alleles == "KIR2DS3*00201"
     assert plan.samples[0].private_support_cross_gene_ratio == 0.8
     assert plan.samples[0].private_support_discard_fallback_genes == "KIR2DS3"

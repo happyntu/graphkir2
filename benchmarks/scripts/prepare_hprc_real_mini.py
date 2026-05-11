@@ -189,6 +189,34 @@ def build_preset(
     }
 
 
+def build_enhancedgate_preset(base_preset: dict[str, object]) -> dict[str, object]:
+    """Build a targeted enhancedgate typing preset from the baseline preset."""
+    preset = dict(base_preset)
+    preset.update(
+        {
+            "benchmark_label": "hprc-real-mini-enhancedgate",
+            "allele_exon_weight": 2.0,
+            "allele_ambiguity_neutral_prob": 0.999,
+            "allele_select_min_fraction_ratio": 0.7,
+            "allele_base_top_n": 600,
+            "allele_cross_gene_neutralization_groups": "KIR2DS3/KIR2DS5",
+            "allele_private_support_genes": "KIR2DS3",
+            "allele_private_support_lambda": 10.0,
+            "allele_private_support_window": 50.0,
+            "allele_private_support_condition_alleles": "KIR2DS3*00201",
+            "allele_private_support_cross_gene_ratio": 0.8,
+            "allele_private_support_discard_fallback_genes": "KIR2DS3",
+            "allele_private_support_discard_fallback_residual_alleles": "KIR2DS3*00201",
+            "allele_private_support_discard_fallback_introduced_alleles": "KIR2DS3*00103",
+            "allele_private_support_discard_fallback_introduced_max_ratio": 0.885,
+            "allele_private_support_discard_fallback_max_score": -20.0,
+            "allele_private_support_discard_fallback_residual_min_ratio": 0.7,
+            "allele_highest_suffix_tie_break_genes": "KIR2DS4",
+        }
+    )
+    return preset
+
+
 def write_preset(preset: dict[str, object], path: Path) -> None:
     """Write a benchmark preset JSON."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -213,6 +241,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config-out",
         default="benchmarks/generated/hprc-real-mini/hprc_real_mini.json",
+    )
+    parser.add_argument(
+        "--enhanced-config-out",
+        default="benchmarks/generated/hprc-real-mini/hprc_real_mini_enhancedgate.json",
     )
     parser.add_argument(
         "--report-out",
@@ -251,17 +283,18 @@ def main() -> None:
     output_dir = Path("benchmarks/results/hprc-real-mini")
     write_manifest(available, manifest_path, output_dir=output_dir)
     config_path = Path(args.config_out)
-    write_preset(
-        build_preset(
-            manifest_path,
-            output_dir / "cohort",
-            truth_tsv,
-            skip_extraction=args.skip_extraction,
-        ),
-        config_path,
+    preset = build_preset(
+        manifest_path,
+        output_dir / "cohort",
+        truth_tsv,
+        skip_extraction=args.skip_extraction,
     )
+    write_preset(preset, config_path)
+    enhanced_config_path = Path(args.enhanced_config_out)
+    write_preset(build_enhancedgate_preset(preset), enhanced_config_path)
     print(f"Wrote manifest to {manifest_path}")
     print(f"Wrote preset to {config_path}")
+    print(f"Wrote enhancedgate preset to {enhanced_config_path}")
     print(f"Wrote missing report to {args.report_out}")
     print("Run legacy baseline:")
     print(
@@ -272,19 +305,16 @@ def main() -> None:
     print("Run enhancedgate typing from the same intermediates:")
     print(
         "python benchmarks/scripts/rerun_typing_private_support.py "
-        f"--config {config_path} --top-n 5000 --base-top-n 600 "
+        f"--config {enhanced_config_path} --top-n 5000 "
         "--output-tsv benchmarks/results/hprc-real-mini/enhancedgate.allele.tsv "
-        "--neutralize-cross-gene-groups KIR2DS3/KIR2DS5 "
-        "--private-support-genes KIR2DS3 --private-support-lambda 10.0 "
-        "--private-support-window 50.0 "
-        "--private-support-condition-alleles KIR2DS3*00201 "
-        "--private-support-cross-gene-ratio 0.8 "
-        "--private-support-discard-fallback-genes KIR2DS3 "
-        "--private-support-discard-fallback-residual-alleles KIR2DS3*00201 "
-        "--private-support-discard-fallback-introduced-alleles KIR2DS3*00103 "
-        "--private-support-discard-fallback-introduced-max-ratio 0.885 "
-        "--private-support-discard-fallback-max-score -20.0 "
-        "--private-support-discard-fallback-residual-min-ratio 0.7"
+    )
+    print("Evaluate enhancedgate:")
+    print(
+        "python benchmarks/scripts/run_compare.py "
+        f"--config {enhanced_config_path} --evaluate "
+        "--pred-tsv benchmarks/results/hprc-real-mini/enhancedgate.allele.tsv "
+        "--multi-map-policy-override likelihood "
+        "--output-dir benchmarks/results/hprc-real-mini-enhancedgate-eval"
     )
 
 

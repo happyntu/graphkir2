@@ -108,6 +108,12 @@ def build_legacy_graphkir_command(config: GraphKir2RunConfig) -> LegacyCommandPl
             "legacy graphkir CLI has no candidate fraction-threshold flag; "
             "this graphkir2 config represents a refactor-only typing enhancement"
         )
+    if config.typing.base_top_n:
+        exact_config_match = False
+        notes.append(
+            "legacy graphkir CLI has no targeted base top-n flag; "
+            "this graphkir2 config represents a refactor-only typing enhancement"
+        )
     if config.typing.cross_gene_neutralization_groups:
         exact_config_match = False
         notes.append(

@@ -210,9 +210,11 @@ Current synthetic functional-target surface:
 * `allele_exon_weight = 2.0`
 * `allele_select_min_fraction_ratio = 0.7`
 * `top_n = 5000` for typing sweeps
-* for full-gene smoke or real-data sanity reruns, keep `--top-n 5000` for the
-  target genes but pass `--base-top-n 600` so non-target genes stay at legacy
-  search depth and do not OOM on `ab_2dl1s1`
+* `allele_base_top_n = 0` for reduced synthetic panels, which keeps all genes at
+  the high `top_n`
+* `allele_base_top_n = 600` for full-gene smoke or real-data sanity reruns, so
+  only target genes keep the high `top_n` and non-target genes stay at legacy
+  search depth on `ab_2dl1s1`
 * targeted `KIR2DS3` private-support reranking
 * directional `KIR2DS3/KIR2DS5` cross-gene ambiguity neutralization applied to
   the `KIR2DS3` target evidence, not to `KIR2DS5` typing evidence
@@ -310,15 +312,18 @@ Operational note: `benchmarks/configs/hprc_real_sanity.json` currently uses
 `examples/cohort.csv`, so it is an examples-format smoke run rather than a valid
 HPRC accuracy benchmark. Use it to verify the full legacy/rerun plumbing only.
 For enhancedgate smoke on that full gene panel, use `--top-n 5000 --base-top-n
-600`; applying top5000 to every gene can exceed a 15GB WSL memory limit.
+600` or the committed `benchmarks/configs/hprc_real_sanity_enhancedgate.json`;
+applying top5000 to every gene can exceed a 15GB WSL memory limit.
 
 To prepare a real HPRC mini sanity run, use
 `benchmarks/scripts/prepare_hprc_real_mini.py`. It checks
 `data/cohorts/hprc.csv` against `data/groundtruth/hprc_summary_v1_2_e.tsv`,
 discovers paired FASTQs under `GRAPHKIR_HPRC_FASTQ_ROOTS`,
 `HPRC_FASTQ_ROOT`, or the default local roots, and writes ignored generated
-manifest/config files only when real sample data exists. As of 2026-05-11, this
-workspace does not contain local HPRC KIR FASTQs or `data_real` intermediates.
+manifest/config files only when real sample data exists. It writes a baseline
+config and an enhancedgate config with `allele_base_top_n = 600`. As of
+2026-05-11, this workspace does not contain local HPRC KIR FASTQs or `data_real`
+intermediates.
 
 ## Synthetic-First Workflow
 

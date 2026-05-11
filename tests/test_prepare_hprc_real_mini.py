@@ -5,6 +5,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "benchmarks" / "scr
 
 from prepare_hprc_real_mini import (  # noqa: E402
     HprcSample,
+    build_enhancedgate_preset,
     build_preset,
     read_hprc_samples,
     read_truth_sample_ids,
@@ -82,3 +83,9 @@ def test_write_manifest_and_build_preset(tmp_path: Path) -> None:
     assert preset["benchmark_label"] == "hprc-real-mini"
     assert preset["input_csv"] == str(manifest)
     assert preset["step_skip_extraction"] is True
+    assert "allele_base_top_n" not in preset
+
+    enhanced = build_enhancedgate_preset(preset)
+    assert enhanced["benchmark_label"] == "hprc-real-mini-enhancedgate"
+    assert enhanced["allele_base_top_n"] == 600
+    assert enhanced["allele_private_support_genes"] == "KIR2DS3"
