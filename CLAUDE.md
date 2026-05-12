@@ -81,6 +81,74 @@ docker build -t linnil1/graphkir .
 docker run -it --rm -v "$PWD":/data linnil1/graphkir graphkir --help
 ```
 
+### Remote Large-Data Execution
+
+For HPRC real-data runs and any benchmark expected to create large FASTQ, SRA,
+SAM/BAM, reference index, or intermediate files, prefer `missmi-server00` over
+this Windows workstation. The local Codex session remains the orchestrator and
+must execute remote commands over SSH. Do not treat the remote workspace as the
+authoritative repository.
+
+Remote access:
+
+```powershell
+ssh -i C:/Users/user/.ssh/missmi_server00 -p 19822 happyntu@140.112.183.210
+```
+
+Remote layout:
+
+```text
+/mypool/KIR_graph/
+  conda_pkgs/
+  envs/graphkir_env/
+  workspaces/
+  data/
+    hprc_fastq/
+    sra/
+    cohorts/
+    groundtruth/
+  index/
+  results/
+  logs/
+  tmp/
+```
+
+Use `/mypool/KIR_graph` on the large ZFS filesystem for large data and runtime
+outputs. Avoid storing HPRC FASTQs, SRA files, whole-genome SAM/BAM files, or
+large indexes under `/home/happyntu` or in the local Windows workspace unless the
+task is explicitly a small local smoke run.
+
+The remote Graph-KIR environment should live at:
+
+```text
+/mypool/KIR_graph/envs/graphkir_env
+```
+
+Expected remote tool stack:
+
+```text
+python=3.10
+muscle=5.3
+hisat2=2.2.1
+samtools=1.22.1
+bwa=0.7.19
+sra-tools
+pigz
+pytest
+mypy
+```
+
+Keep `D:\works\KIR_graph` as the authoritative working tree for edits, commits,
+and pushes. For remote execution, create a runtime snapshot under
+`/mypool/KIR_graph/workspaces/KIR_graph_<commit>_<date>/` by syncing the local
+tree or checking out the target commit, then run from that snapshot with all
+large outputs redirected under `/mypool/KIR_graph`.
+
+Before starting any benchmark on the local machine or `missmi-server00`, notify
+the user and wait for explicit approval. Remote setup, directory creation, env
+creation, and version checks are allowed as preparation, but data-processing
+benchmarks are not.
+
 ## Commands
 
 **Run graphkir (single sample):**
