@@ -149,6 +149,18 @@ the user and wait for explicit approval. Remote setup, directory creation, env
 creation, and version checks are allowed as preparation, but data-processing
 benchmarks are not.
 
+### HPRC FASTQ Provenance
+
+When working with HPRC FASTQs, do not assume a full-size file with a checksum
+mismatch is a broken downloader. If two independent official paths disagree with
+the published `fastq_md5`, classify the case as `source-md5 inconsistency` and
+preserve the evidence in the remote log directory.
+
+For ENA/NCBI cross-checks, prefer `missmi-server00` and the remote
+`/mypool/KIR_graph` workspace. Use the installed `sra-tools` there when a
+second-source verification is needed. Keep the local Windows tree for code and
+orchestration, not for large FASTQ or SRA payloads.
+
 ## Commands
 
 **Run graphkir (single sample):**
@@ -631,6 +643,11 @@ large FASTQs; review disk and runtime budget before running its generated shell
 commands. Its generated `prefetch` commands set `--check-rs no` to avoid
 reference-sequence dependency stalls after SRA verification and `--max-size
 100G` because some HPRC accessions are larger than the SRA Toolkit 20G default.
+
+If the ENA path produces a full-size file that still mismatches `fastq_md5`,
+try an independent NCBI SRA Toolkit verification on `missmi-server00` before
+re-downloading again. Do not keep relabeling that case as a normal download
+error once the provenance mismatch is demonstrated.
 
 ## Synthetic-First Workflow
 

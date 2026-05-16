@@ -64,6 +64,10 @@ Synthetic-first execution order:
 * run focused ablations from `benchmarks/configs/`
 * collect runtime and memory metrics
 * compare baseline vs refactored outputs on simulated and HPRC data
+* treat HPRC acquisition as a separate provenance gate:
+  * verify `fastq_md5` against at least two independent official download paths when possible
+  * classify full-size but mismatched files as `source-md5 inconsistency`, not generic download failure
+  * only promote real-data runs after the FASTQ provenance is settled
 * produce per-gene and failure-mode summaries
 
 Primary success criteria:
