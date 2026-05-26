@@ -1,6 +1,12 @@
-# Graph-KIR
+# graphkir2
 
-Graph-KIR is a tool for KIR (Killer Immunoglobulin-like Receptor) typing using short read FASTQ files.
+**graphkir2** is the next-generation improved version of [Graph-KIR](https://github.com/linnil1/KIR_graph), a tool for KIR (Killer Immunoglobulin-like Receptor) gene typing from short-read FASTQ sequencing data.
+
+Compared to the original Graph-KIR, graphkir2 targets stronger functional typing accuracy:
+- Better `3-digit` and `5-digit` typing performance against state-of-the-art tools (e.g., Geny)
+- Preserved or improved copy number estimation
+- Preserved `7-digit` full-resolution typing capability
+- Comparable runtime efficiency
 
 This repo contains two main programs:
 
@@ -21,11 +27,14 @@ This repo contains two main programs:
 
 ## Version
 
-1. version 1.0
+1. Graph-KIR v1.0 (original)
 	* Biorxiv: https://doi.org/10.1101/2023.11.29.568665
 	* github tag: v1.0
-2. version 2.0 (latest)
+2. Graph-KIR v2.0
 	* github tag: v2.0
+3. graphkir2 (this repo — active development)
+	* Next-generation improved implementation
+	* Benchmark target: surpass Geny on 3-digit/5-digit functional typing
 
 
 ## Docker Version
@@ -89,7 +98,7 @@ tar xvf example_index.tar.gz
 # ln -s example_index graphkir_alpha
 ```
 
-Install Graph-KIR:
+Install graphkir2:
 ``` bash
 git clone https://github.com/linnil1/KIR_graph
 cd KIR_graph

@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Graph-KIR** is a bioinformatics tool for KIR (Killer Immunoglobulin-like Receptor) gene typing from short-read FASTQ sequencing data. It uses graph-based alignment (via HISAT2) to determine KIR allele types and estimate copy numbers. A companion pipeline `kirpipe` integrates multiple third-party KIR typing tools.
+**graphkir2** is the next-generation improved version of Graph-KIR, a bioinformatics tool for KIR (Killer Immunoglobulin-like Receptor) gene typing from short-read FASTQ sequencing data. It uses graph-based alignment (via HISAT2) to determine KIR allele types and estimate copy numbers. A companion pipeline `kirpipe` integrates multiple third-party KIR typing tools.
+
+The original Graph-KIR paper: https://doi.org/10.1101/2023.11.29.568665
 
 ## GraphKir2 Refactor Objective
 
@@ -60,7 +62,7 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate graphkir_env
 
 # 專案路徑
-cd /mnt/d/works/KIR_graph
+cd /mnt/d/works/bio/graphkir2
 ```
 
 **從頭建立環境（若需重建）：**
@@ -81,13 +83,17 @@ docker build -t linnil1/graphkir .
 docker run -it --rm -v "$PWD":/data linnil1/graphkir graphkir --help
 ```
 
-### Remote Large-Data Execution
+### Remote Execution（missmi-server00）
 
-For HPRC real-data runs and any benchmark expected to create large FASTQ, SRA,
-SAM/BAM, reference index, or intermediate files, prefer `missmi-server00` over
-this Windows workstation. The local Codex session remains the orchestrator and
-must execute remote commands over SSH. Do not treat the remote workspace as the
-authoritative repository.
+所有長時間運行的任務——包括但不限於 HPRC real-data runs、大規模 FASTQ
+下載、SRA prefetch/fasterq-dump、Geny batch typing、graphkir2 real-data
+sanity、broad synthetic sweeps、index building——都應在 `missmi-server00`
+執行，而非本地 Windows 工作站或 WSL。本地環境僅適用於小型 smoke test
+（如 `examples/` 資料）和程式碼編輯。
+
+判斷基準：預期執行時間超過 10 分鐘、產出超過 1 GB、或需要
+bioinformatics pipeline（HISAT2、minimap2、fasterq-dump 等）的任務，
+一律送往遠端。
 
 Remote access:
 
@@ -107,6 +113,7 @@ Remote layout:
     sra/
     cohorts/
     groundtruth/
+  geny/                  # Geny install + patched geny.py
   index/
   results/
   logs/
@@ -136,9 +143,11 @@ sra-tools
 pigz
 pytest
 mypy
+minimap2=2.28
+gurobipy=13.0.2
 ```
 
-Keep `D:\works\KIR_graph` as the authoritative working tree for edits, commits,
+Keep `D:\works\bio\graphkir2` as the authoritative working tree for edits, commits,
 and pushes. For remote execution, create a runtime snapshot under
 `/mypool/KIR_graph/workspaces/KIR_graph_<commit>_<date>/` by syncing the local
 tree or checking out the target commit, then run from that snapshot with all
@@ -148,6 +157,46 @@ Before starting any benchmark on the local machine or `missmi-server00`, notify
 the user and wait for explicit approval. Remote setup, directory creation, env
 creation, and version checks are allowed as preparation, but data-processing
 benchmarks are not.
+
+### 遠端長時間任務：斷線容錯模式
+
+SSH 連線會因網路中斷、本地休眠、或 session timeout 而斷開。所有預期
+執行超過 10 分鐘的遠端指令，必須使用以下其中一種斷線容錯模式：
+
+**方式 1：tmux（互動式，推薦用於需要即時監控的任務）**
+
+```bash
+# 建立 named session 並在其中執行
+ssh ... "tmux new-session -d -s <session_name> '<command> 2>&1 | tee <logfile>'"
+
+# 查看進度
+ssh ... "tmux capture-pane -t <session_name> -p | tail -20"
+
+# 完整 log
+ssh ... "tail -40 <logfile>"
+```
+
+**方式 2：nohup（fire-and-forget，推薦用於批次腳本）**
+
+```bash
+# 啟動並立即斷開，所有輸出寫入 log
+ssh ... "nohup bash <script.sh> > <logfile> 2>&1 &"
+
+# 查看進度
+ssh ... "tail -40 <logfile>"
+
+# 確認 process 存活
+ssh ... "ps aux | grep <keyword> | grep -v grep"
+```
+
+命名規範：
+
+- tmux session：`<task_name>`（如 `hprc_download`、`geny_batch`、`graphkir2_sanity`）
+- log 路徑：`/mypool/KIR_graph/logs/<task_name>.log`
+
+禁止直接在 SSH foreground 執行長時間指令（即不帶 tmux/nohup 的裸
+command）。如果 SSH session 斷線，foreground process 會被 SIGHUP 終止，
+導致需要重跑。
 
 ### HPRC FASTQ Provenance
 
@@ -176,14 +225,32 @@ graphkir --thread 2 --input-csv examples/cohort.csv \
     --index-folder example_index --output-cohort-name example_data/cohort
 ```
 
+**Run graphkir2 (rerun typing with current-lead config):**
+```bash
+# Print the current-lead rerun command (includes CLI-only guard flags):
+python benchmarks/scripts/prepare_hprc_real_mini.py
+
+# Run a benchmark comparison (legacy vs graphkir2):
+python benchmarks/scripts/run_compare.py --config benchmarks/configs/<preset>.json
+
+# Run the full functional stress sweep (7-panel):
+python benchmarks/scripts/run_functional_stress_sweep.py
+
+# Inspect remaining functional errors after a sweep:
+python benchmarks/scripts/inspect_remaining_functional_errors.py
+
+# Compare against Geny (requires data/geny_hprc44.txt):
+python benchmarks/scripts/compare_geny_functional.py [--graphkir-tsv <path>]
+```
+
 **Type checking:**
 ```bash
-mypy graphkir/ kir/
+mypy graphkir/ kir/ src/graphkir2/
 ```
 
 **Format code:**
 ```bash
-black graphkir/ kir/
+black graphkir/ kir/ src/graphkir2/
 ```
 
 **Build documentation:**
@@ -225,6 +292,24 @@ For `graphkir2`, benchmark-oriented design matters as much as implementation:
 * exploratory tuning and failure analysis belong in `docs/research/`
 
 ## Architecture
+
+### graphkir2 module design (`src/graphkir2/`)
+
+`src/graphkir2/` follows a **stage-contract design**: each pipeline stage is defined by its input/output contract (frozen dataclasses), not by its implementation. Stages are composed in `core/`.
+
+| Module | Responsibility |
+|--------|----------------|
+| `config/` | Frozen dataclasses for runtime, index, typing, CN, and input configuration |
+| `io/` | Manifest parsing, output path layout, stable artifact naming |
+| `core/` | Pipeline composition and stage orchestration |
+| `mapping/` | Graph mapping contracts, multi-map policy, mapping artifact schemas |
+| `cn/` | Depth-derived copy-number estimation, cohort merge behavior |
+| `typing/` | Allele typing plans, confidence-aware output contracts, guard logic |
+| `benchmark/` | Preset loading, legacy command parity, result artifact schema |
+| `model.py` | Shared domain types: `SampleInput`, `AlleleCall`, `SampleResult`, `GeneCopyNumber` |
+| `cli.py` | Entrypoint and argument parsing for `graphkir2` CLI |
+
+New implementation code goes here, not in `graphkir/`. The `graphkir/` package remains the frozen baseline.
 
 ### Pipeline stages (`graphkir/`)
 
