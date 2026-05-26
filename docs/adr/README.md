@@ -14,5 +14,9 @@ Planned first ADRs:
 * `ADR-002`: separate benchmark planning artifacts from executed benchmark results
 * `ADR-003`: prioritize copy number and `7-digit` performance over a single aggregate score
 
+Accepted ADRs:
+
+* [`ADR-004`](ADR-004-cpp23-rewrite-deferred.md): C++23 改寫延後至 method 穩定後
+
 Do not use ADRs for exploratory notes or one-off benchmark observations. Put those in
 `docs/research/`.
